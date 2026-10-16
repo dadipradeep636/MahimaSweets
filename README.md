@@ -64,3 +64,7 @@ Generated with the built-in image-generation tool, then copied into this project
 ## Verification
 
 Production static build and TypeScript checks passed. Browser checks covered 250 g pricing, quantity totals, persistence across refresh, sample delivery fees and demo confirmation. The mobile layout was visually inspected at a narrow viewport. Spline integration requires a real published scene URL and has not been tested with a custom shop scene.
+
+## 3D scene revision
+The platter now uses a reflected studio environment, warm key/fill lighting, contact and object shadows, a profiled engraved brass tray, fine instanced boondi pearls, pistachio garnish, bevelled diamond katli with silver-leaf bump texture, a ceramic syrup bowl, mottled glazed jamun and shaped saffron peda. Motion pauses when offscreen or the tab is hidden. Reduced-motion preferences and a WebGL image fallback are supported. It remains a custom code-native Three.js illustration; a Spline scene is optional through the existing integration.
+
