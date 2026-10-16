@@ -1,6 +1,6 @@
 # Mahima Sweets
 
-A responsive Next.js storefront for Mahima Sweets, Gangavathi, Karnataka. Ivory, saffron and plum visual design, custom generated mithai imagery, an interactive Three.js platter, animated gift packaging, product details, weight selection, a persistent browser cart and demo checkout.
+A responsive Next.js storefront for Mahima Sweets, Gangavathi, Karnataka. Ivory, saffron and plum visual design, custom generated mithai imagery, a layered food preview with perspective and tilt, animated gift packaging, product details, weight selection, a persistent browser cart and demo checkout.
 
 ## Run on Windows
 
@@ -37,12 +37,12 @@ The included `SplineDisplay.tsx` uses the official React Spline package and repl
 - Products, sample prices, descriptions, allergens: `src/lib/products.ts`.
 - Main sections, demo checkout, sample contact details: `src/app/page.tsx`.
 - Responsive styling and animation: `src/app/globals.css`.
-- Procedural 3D platter: `src/components/SweetScene.tsx`.
+- Layered product preview: `src/components/SweetScene.tsx`.
 - Custom imagery: `public/images/`.
 
 ## Shopping behaviour
 
-- Six sweets with 250 g, 500 g and 1 kg selections.
+- Nine sweets with 250 g, 500 g and 1 kg selections; four namkeens and two hot snacks with product-specific packs.
 - One fixed 1 kg assorted celebration box.
 - Category filters and search, product details and sample allergen/storage notes.
 - Cart quantities up to 20 per product/pack combination, removal, browser-local persistence.
@@ -65,6 +65,10 @@ Generated with the built-in image-generation tool, then copied into this project
 
 Production static build and TypeScript checks passed. Browser checks covered 250 g pricing, quantity totals, persistence across refresh, sample delivery fees and demo confirmation. The mobile layout was visually inspected at a narrow viewport. Spline integration requires a real published scene URL and has not been tested with a custom shop scene.
 
-## 3D scene revision
-The platter now uses a reflected studio environment, warm key/fill lighting, contact and object shadows, a profiled engraved brass tray, fine instanced boondi pearls, pistachio garnish, bevelled diamond katli with silver-leaf bump texture, a ceramic syrup bowl, mottled glazed jamun and shaped saffron peda. Motion pauses when offscreen or the tab is hidden. Reduced-motion preferences and a WebGL image fallback are supported. It remains a custom code-native Three.js illustration; a Spline scene is optional through the existing integration.
+## Expanded menu and visual polish
+The storefront now has nine sweets, a dedicated Namkeens collection (Murukku, Masala Mixture, Aloo Bhujia, Banana Chips), and Hot & Crispy samosa/pakodi cards with animated steam. All are included in search, product details, the saved cart and demo receipt. Samosas use 2/4/6-piece packs; namkeens and pakodi use 100/250/500 g. The low-detail procedural platter was replaced by a detailed generated food image with CSS perspective, tilting and layered motion; it is not a 360-degree geometric food model. The optional Spline integration remains available. Reduced-motion preferences disable motion. Image prompts are recorded in ASSET-PROMPTS-EXPANSION.md.
+
+
+
+Image delivery: WebP copies are served from public/images; original generated PNG assets are retained in artwork-originals. The optimized image set is approximately 4.4 MB instead of 39 MB. The layered preview is image-based perspective animation, not a 360-degree geometric food model.
 
