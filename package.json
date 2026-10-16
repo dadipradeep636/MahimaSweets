@@ -1,0 +1,9 @@
+{
+  "name": "mahima-sweets",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": { "dev": "next dev --hostname 127.0.0.1", "build": "next build", "start": "next start", "typecheck": "tsc --noEmit" },
+  "dependencies": { "next": "latest", "react": "latest", "react-dom": "latest", "three": "latest", "lucide-react": "latest", "@splinetool/react-spline": "latest", "@splinetool/runtime": "latest" },
+  "devDependencies": { "typescript": "latest", "@types/node": "latest", "@types/react": "latest", "@types/react-dom": "latest", "@types/three": "latest" },
+  "packageManager": "pnpm@10.28.2"
+}
