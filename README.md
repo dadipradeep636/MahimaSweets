@@ -81,3 +81,5 @@ A full-width animated drink showcase follows samosa/pakodi, with a generated tra
 
 ## Colour themes
 Header light/dark switch remembers the choice in localStorage (mahima-theme), follows system preference until chosen, and applies before initial paint. Both themes cover the menu, Badam feature, dialogs and cart; food imagery retains its natural colours.
+
+Readability: larger header navigation and product typography; solid full-width Add to cart actions use contrasting colours in both themes. Tablet navigation collapses before desktop links crowd the header.
