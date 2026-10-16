@@ -83,3 +83,6 @@ A full-width animated drink showcase follows samosa/pakodi, with a generated tra
 Header light/dark switch remembers the choice in localStorage (mahima-theme), follows system preference until chosen, and applies before initial paint. Both themes cover the menu, Badam feature, dialogs and cart; food imagery retains its natural colours.
 
 Readability: larger header navigation and product typography; solid full-width Add to cart actions use contrasting colours in both themes. Tablet navigation collapses before desktop links crowd the header.
+
+## Opening hero redesign
+Removed all floating copy labels and the stamp from the hero visual. New transparent platter and separate ladoo/kaju assets animate at different depths, with pointer/keyboard tilt, an animated shadow, pause/reset controls, off-screen pause and reduced-motion support. These are detailed raster layers composed in CSS 3D perspective, not a 360-degree mesh or Spline scene. Main image loads eagerly; the three assets are WebP.

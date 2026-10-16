@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import BadamFeature from '@/components/BadamFeature';
 import ThemeToggle from '@/components/ThemeToggle';
+import HeroSweets from '@/components/HeroSweets';
 import { shop, whatsappLink } from '@/lib/shop';
 import { ArrowRight, ArrowUpRight, ShoppingBag, Plus, Minus, X, MapPin, Phone, Clock3, Leaf, Gift, Heart, Sparkles, Check, Trash2, Search, Menu, Package, Truck, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { products, namkeens, hotItems, gift, catalog, money, linePrice, defaultPack, packOptions, packLabel, priceFor, type Product, type CartItem } from '@/lib/products';
@@ -67,7 +68,7 @@ export default function Home() {
 
     <main id="main">
       <section className="hero"><div className="hero-copy"><p className="eyebrow"><span/> GANGAVATHI, LET’S GET SNACKING</p><h1>Sweet tooth?<br/><em>We get you.</em></h1><p className="hero-description">Melt-in-your-mouth mithai. Can’t-stop crunch.<br className="desktop-break"/> And hot snacks that steal the chai-time spotlight.</p><div className="hero-buttons"><a className="button primary" href="#collection">Pick your sweet fix <ArrowUpRight size={19}/></a><a className="text-link" href="#namkeens">Get your crunch on <ArrowRight size={16}/></a></div><div className="hero-note"><span className="veg-icon"><i/></span><span>Sweet. Salty. Spicy. Sorted.</span><span className="dot">·</span><span>Made for sharing</span></div></div>
-      <div className="hero-visual"><div className="hero-orbit orbit-one"/><div className="hero-orbit orbit-two"/><span className="hero-spark sparkle-one">✦</span><span className="hero-spark sparkle-two">✧</span><div className="hero-image-wrap"><img className="hero-image" src="/images/hero.webp" alt="Brass platter of ladoo, kaju katli, peda, jalebi and gulab jamun" fetchPriority="high"/></div><div className="floating-label label-top"><span>✦</span> One bite. Big happy.</div><div className="floating-label label-bottom"><Heart size={16}/><span>Your cravings called.</span></div><div className="hero-stamp"><span>THE SWEET LIFE</span><b>मिठास</b><span>MAHIMA SWEETS</span></div></div>
+      <HeroSweets/>
       <a className="scroll-cue" href="#collection"><span>FOLLOW YOUR CRAVINGS</span><ArrowRight size={16}/></a>
       </section>
 

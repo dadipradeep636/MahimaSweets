@@ -62,3 +62,18 @@ Premium photorealistic Indian badam milk (badam geer / badam kheer drink) in a t
 ## Refined Badam Geer glass
 Built-in image edit, transparent.
 Replace the tall old-fashioned fluted sundae glass with an understated luxury hotel straight-sided cylindrical drinking tumbler, medium height, elegant thin clear walls, polished substantial flat transparent base, NO stem NO pedestal NO fluting NO handle. Keep delicious creamy pale ivory saffron badam milk, with restrained few fine almond slivers and pistachio garnish and two saffron threads. Sophisticated premium food campaign, realistic proportions, soft warm highlights, three-quarter camera very slightly above rim. Entire glass visible centered with generous clear margins. No scattered nuts at base, no props, no text, no logo. Isolated completely on a transparent background preserving alpha; no glow or colored background. Photorealistic detailed glass and milk.
+
+
+## hero-platter-luxe
+Built-in imagegen, transparent.
+Luxury Indian mithai campaign hero product cutout. A shallow refined brushed brass platter seen at a dramatic three-quarter angle, camera about 25 degrees above plate, entire platter and rim fully visible, centered with generous transparent margin. Beautiful restrained composition of 3 richly textured bright orange motichoor ladoos, 3 ivory diamond kaju katli pieces with delicate edible silver leaf, 2 glistening dark amber gulab jamun in a small matching bronze bowl, two golden saffron peda, and two intricate glossy jalebi spirals. Each sweet unmistakable, delicious, finely detailed and realistically proportioned, pistachio crumbs sparingly. Premium editorial food photography blended with exceptionally photorealistic 3D product rendering, soft warm studio key light upper left, crisp appetizing highlights, detailed gold rim, smooth natural shading. The platter is floating with NO table, NO background, NO surrounding props, NO text, NO labels, NO badge. Isolated transparent background, no opaque oval backdrop, no frame, no glow. Landscape 3:2 composition. All objects fully within frame.
+
+
+## hero-ladoo-cutout
+Built-in imagegen, transparent.
+One single exquisite Indian motichoor ladoo floating isolated on a transparent background. Perfectly detailed tiny irregular orange boondi pearls, moist rich ghee highlights, just three fine green pistachio slivers on top, realistically appetizing food macro shot, premium photorealistic 3D advertising render with studio light from upper left. Three-quarter view showing dimensional sphere. Centered with generous transparent margin, no plate no hands no background no glow no other sweets no text. Square composition.
+
+
+## hero-kaju-cutout
+Built-in imagegen, transparent.
+One single elegant diamond-shaped kaju katli Indian cashew sweet, ivory beige dense fudgy texture with natural delicate edible silver leaf on the top face. Floating in a three-quarter perspective with visible thick beveled sides, long diamond axis diagonally from bottom left to top right. Photorealistic food advertising render, refined soft light upper left, enticing realistic detail. Centered isolated cutout on transparent background, generous transparent margin. No plate no hands no background no glow no text no other sweets. Square composition.
