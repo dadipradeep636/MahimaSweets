@@ -78,3 +78,6 @@ Eleven sweets include Bellam Dryfruit Poothrekulu (6/12 pieces) and Dharwad Peda
 
 ## Badam Geer feature
 A full-width animated drink showcase follows samosa/pakodi, with a generated transparent glass photograph, CSS perspective, hover tilt, floating almonds, orbit accents and steam. Pause and reduced-motion support are included. It is layered image-based motion, not a 360-degree glass mesh. The 250/500 ml servings integrate with product details, search, cart, receipt and WhatsApp; rates are samples.
+
+## Colour themes
+Header light/dark switch remembers the choice in localStorage (mahima-theme), follows system preference until chosen, and applies before initial paint. Both themes cover the menu, Badam feature, dialogs and cart; food imagery retains its natural colours.

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import BadamFeature from '@/components/BadamFeature';
+import ThemeToggle from '@/components/ThemeToggle';
 import { shop, whatsappLink } from '@/lib/shop';
 import { ArrowRight, ArrowUpRight, ShoppingBag, Plus, Minus, X, MapPin, Phone, Clock3, Leaf, Gift, Heart, Sparkles, Check, Trash2, Search, Menu, Package, Truck, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { products, namkeens, hotItems, gift, catalog, money, linePrice, defaultPack, packOptions, packLabel, priceFor, type Product, type CartItem } from '@/lib/products';
@@ -61,7 +62,7 @@ export default function Home() {
     <header className="header"><div className="nav-wrap">
       <a className="brand" href="#" aria-label="Mahima Sweets home"><span className="brand-mark">m<span>✦</span></span><span>mahima<span className="brand-sub">S W E E T S</span></span></a>
       <nav aria-label="Main navigation" className={mobileNav?'nav-links open':'nav-links'}><a onClick={nav} href="#favourites">Specials</a><a onClick={nav} href="#collection">Sweets</a><a onClick={nav} href="#namkeens">Namkeens</a><a onClick={nav} href="#hot-snacks">Hot & Crispy <span className="nav-hot-dot"/></a><a onClick={nav} href="#gifting">Gifting <span className="small-star">✦</span></a><a onClick={nav} href="#visit">Visit us <ArrowUpRight size={13}/></a></nav>
-      <div className="nav-actions"><button className="icon-button search-trigger" aria-label="Search sweets" onClick={()=>{setSearchOpen(v=>!v);document.getElementById('collection')?.scrollIntoView({behavior:'smooth'});}}><Search size={20}/></button><button className="bag-button" onClick={()=>setCartOpen(true)}><ShoppingBag size={18}/><span>Your bag</span><b>{count}</b></button><button className="icon-button mobile-toggle" aria-label={mobileNav?'Close menu':'Open menu'} aria-expanded={mobileNav} onClick={()=>setMobileNav(!mobileNav)}>{mobileNav?<X/>:<Menu/>}</button></div>
+      <div className="nav-actions"><ThemeToggle/><button className="icon-button search-trigger" aria-label="Search sweets" onClick={()=>{setSearchOpen(v=>!v);document.getElementById('collection')?.scrollIntoView({behavior:'smooth'});}}><Search size={20}/></button><button className="bag-button" aria-label={`Your bag ${count}`} onClick={()=>setCartOpen(true)}><ShoppingBag size={18}/><span>Your bag</span><b>{count}</b></button><button className="icon-button mobile-toggle" aria-label={mobileNav?'Close menu':'Open menu'} aria-expanded={mobileNav} onClick={()=>setMobileNav(!mobileNav)}>{mobileNav?<X/>:<Menu/>}</button></div>
     </div></header>
 
     <main id="main">
