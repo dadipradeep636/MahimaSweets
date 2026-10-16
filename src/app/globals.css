@@ -57,3 +57,5 @@ html[data-theme=dark]{color-scheme:dark;--paper:#1c1719;--ink:#f5eadb;--muted:#c
 @media(max-width:1100px){.nav-links{gap:12px}.nav-actions{gap:10px}}@media(min-width:601px) and (max-width:1000px){.mobile-toggle{display:grid}.nav-links{display:none}.nav-links.open{display:flex;position:absolute;top:87px;left:0;right:0;background:var(--paper);padding:24px 6vw;flex-direction:column;align-items:start;gap:22px;border-bottom:1px solid var(--line)}.nav-links.open a{font-size:13px}}
 @media(max-width:600px){.theme-toggle{padding:6px;gap:3px;min-height:32px}.theme-toggle>svg{display:none}.nav-actions{gap:9px}.bag-button>span{display:none}.theme-toggle-track{width:31px}}
 @media(prefers-reduced-motion:reduce){.theme-toggle-track>span{transition:none}}
+
+.badam-glass img{width:88%;height:88%;margin:5% auto 0}.badam-steam{top:4%}@media(max-width:600px){.badam-glass img{width:91%;height:91%;margin:3% auto 0}}

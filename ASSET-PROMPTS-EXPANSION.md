@@ -57,3 +57,8 @@ Premium Indian sweet-shop food catalog photograph of six authentic Dharwad peda,
 ## Badam Geer
 Mode: built-in imagegen, transparent cutout
 Premium photorealistic Indian badam milk (badam geer / badam kheer drink) in a tall elegant clear glass, rich creamy pale saffron almond milk with tiny almond flecks, topped with finely sliced almonds pistachios and a few saffron threads. One beautiful central glass, front three-quarter angle slightly above, entire glass and base visible. A few almonds at the base. Transparent background, isolated cutout, no table no shadows outside object, no text no logo no hands. Extremely detailed realistic glass highlights and delicious rich milk texture, warm golden studio lighting, luxury sweet shop campaign, portrait composition with generous space around glass.
+
+
+## Refined Badam Geer glass
+Built-in image edit, transparent.
+Replace the tall old-fashioned fluted sundae glass with an understated luxury hotel straight-sided cylindrical drinking tumbler, medium height, elegant thin clear walls, polished substantial flat transparent base, NO stem NO pedestal NO fluting NO handle. Keep delicious creamy pale ivory saffron badam milk, with restrained few fine almond slivers and pistachio garnish and two saffron threads. Sophisticated premium food campaign, realistic proportions, soft warm highlights, three-quarter camera very slightly above rim. Entire glass visible centered with generous clear margins. No scattered nuts at base, no props, no text, no logo. Isolated completely on a transparent background preserving alpha; no glow or colored background. Photorealistic detailed glass and milk.
