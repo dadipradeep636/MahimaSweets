@@ -72,3 +72,6 @@ The storefront now has nine sweets, a dedicated Namkeens collection (Murukku, Ma
 
 Image delivery: WebP copies are served from public/images; original generated PNG assets are retained in artwork-originals. The optimized image set is approximately 4.4 MB instead of 39 MB. The layered preview is image-based perspective animation, not a 360-degree geometric food model.
 
+
+## Favourites and WhatsApp
+Eleven sweets include Bellam Dryfruit Poothrekulu (6/12 pieces) and Dharwad Peda. Our Favourites uses direct pack selectors and accurate pack-based pricing. WhatsApp links open a prefilled, unsent message to the owner-supplied +91 99237 09094. All menu prices remain illustrative. No invented ratings, bestseller or preservative claims are used.
