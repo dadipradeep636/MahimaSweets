@@ -75,3 +75,6 @@ Image delivery: WebP copies are served from public/images; original generated PN
 
 ## Favourites and WhatsApp
 Eleven sweets include Bellam Dryfruit Poothrekulu (6/12 pieces) and Dharwad Peda. Our Favourites uses direct pack selectors and accurate pack-based pricing. WhatsApp links open a prefilled, unsent message to the owner-supplied +91 99237 09094. All menu prices remain illustrative. No invented ratings, bestseller or preservative claims are used.
+
+## Badam Geer feature
+A full-width animated drink showcase follows samosa/pakodi, with a generated transparent glass photograph, CSS perspective, hover tilt, floating almonds, orbit accents and steam. Pause and reduced-motion support are included. It is layered image-based motion, not a 360-degree glass mesh. The 250/500 ml servings integrate with product details, search, cart, receipt and WhatsApp; rates are samples.

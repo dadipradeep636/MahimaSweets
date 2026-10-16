@@ -52,3 +52,8 @@ Premium Indian sweet-shop food catalog photograph of Bellam dryfruit poothrekulu
 ## dharwad
 Mode: builtin imagegen
 Premium Indian sweet-shop food catalog photograph of six authentic Dharwad peda, rustic brown caramelised milk sweet rounds coated in fine sugar crystals, slightly irregular oval shape and grainy texture, on a small bronze plate with a tiny saffron accent. Square composition, entire plate visible, warm cream and tan seamless background, rich detailed authentic food textures, soft directional studio light, elegant traditional styling, no text, logos, watermarks, hands or people. Match a professional mithai storefront.
+
+
+## Badam Geer
+Mode: built-in imagegen, transparent cutout
+Premium photorealistic Indian badam milk (badam geer / badam kheer drink) in a tall elegant clear glass, rich creamy pale saffron almond milk with tiny almond flecks, topped with finely sliced almonds pistachios and a few saffron threads. One beautiful central glass, front three-quarter angle slightly above, entire glass and base visible. A few almonds at the base. Transparent background, isolated cutout, no table no shadows outside object, no text no logo no hands. Extremely detailed realistic glass highlights and delicious rich milk texture, warm golden studio lighting, luxury sweet shop campaign, portrait composition with generous space around glass.

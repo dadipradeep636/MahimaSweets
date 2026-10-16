@@ -1,7 +1,7 @@
 export type Product = {
   id: string; name: string; subtitle: string; description: string; category: string;
   price: number; image: string; tag: string; allergens: string; storage: string;
-  baseWeight?: number; packs?: number[]; sale?: 'pairs' | 'pieces'; basePieces?: number; hot?: boolean; special?: string;
+  unit?: 'ml'; baseWeight?: number; packs?: number[]; sale?: 'pairs' | 'pieces'; basePieces?: number; hot?: boolean; special?: string;
 };
 export const products: Product[] = [
   { id: 'poothrekulu', name: 'Bellam Dryfruit Poothrekulu', subtitle: 'Paper-thin layers. Rich jaggery. A nutty little surprise.', description: 'Delicate rice-paper sheets wrapped around jaggery, ghee and crunchy dry fruits. Light, flaky and beautifully indulgent, with a little treasure in every fold.', category: 'Traditional', price: 420, sale: 'pieces', basePieces: 6, packs: [6,12], special: 'MAHIMA SPECIAL', image: '/images/poothrekulu.webp', tag: 'A delicate southern favourite', allergens: 'Milk (ghee), almonds, cashews and other nuts. Confirm actual ingredients with the shop.', storage: 'Handle gently and store airtight in a cool, dry place. Confirm shelf life with the shop.' },
@@ -27,12 +27,13 @@ export const hotItems: Product[] = [
   { id: 'pakodi', name: 'Onion Pakodi', subtitle: 'Rainy-day mood. Any-day crunch.', description: 'Onion ribbons, gram flour, curry leaves and a little green chilli, fried into craggy golden bites. The perfect excuse to put the kettle on.', category: 'Hot & Crispy', price: 70, baseWeight: 100, packs: [100,250,500], hot: true, image: '/images/pakodi.webp', tag: 'Bring on the crunch', allergens: 'Chickpea flour. May contain wheat, peanuts, sesame and milk.', storage: 'Best enjoyed hot. Confirm preparation time, availability and safe holding instructions with the shop.' },
 ];
 export const gift: Product = { id: 'gift', name: 'The Mahima Celebration Box', subtitle: 'Six favourites. One thoughtful gift.', description: 'A curated 1 kg assortment of our six featured sweets in a celebration-ready box. The selection shown is illustrative; confirm availability and ingredients before ordering.', category: 'Gifting', price: 790, image: '/images/hero.webp', tag: '1 kg assorted gift box', allergens: 'Milk, cashews, pistachios, wheat. May contain other nuts.', storage: 'Mixed sweets have different storage needs. Confirm handling and shelf life with the shop.' };
-export const catalog = [...products, ...namkeens, ...hotItems, gift];
+export const badam: Product = {id:'badam-geer',name:'Badam Geer',subtitle:'Sip slow. Stay golden.',description:'A rich almond-milk drink with a saffron glow, finished with almond and pistachio slivers. A creamy companion to your favourite hot snacks. Ingredients and serving image are illustrative; confirm with the shop.',category:'Signature Drinks',price:90,unit:'ml',baseWeight:250,packs:[250,500],image:'/images/badam-geer.webp',tag:'The golden finish',allergens:'Milk, almonds and pistachios. May contain other nuts.',storage:'Confirm serving temperature, availability and storage with the shop. Refrigerate promptly if supplied chilled.'};
+export const catalog = [...products, ...namkeens, ...hotItems, badam, gift];
 export const money = (value: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value);
 export type CartItem = { id: string; grams: number; quantity: number };
 export const defaultPack = (p: Product) => p.id === 'gift' ? 1000 : p.sale === 'pairs' ? 1 : p.sale === 'pieces' ? p.basePieces || 1 : p.baseWeight || 500;
 export const packOptions = (p: Product) => p.id === 'gift' ? [1000] : p.packs || [250,500,1000];
-export const packLabel = (p: Product, size: number) => p.id === 'gift' ? '1 kg assorted box' : p.sale === 'pairs' ? `${size * 2} pieces` : p.sale === 'pieces' ? `${size} pieces` : size === 1000 ? '1 kg' : `${size} g`;
+export const packLabel = (p: Product, size: number) => p.id === 'gift' ? '1 kg assorted box' : p.sale === 'pairs' ? `${size * 2} pieces` : p.sale === 'pieces' ? `${size} pieces` : p.unit === 'ml' ? `${size} ml` : size === 1000 ? '1 kg' : `${size} g`;
 export const priceFor = (p: Product, size: number) => Math.round(p.price * (p.id === 'gift' ? 1 : p.sale === 'pairs' ? size : p.sale === 'pieces' ? size / (p.basePieces || 1) : size / (p.baseWeight || 500)));
 export function linePrice(item: CartItem) { const p = catalog.find(p => p.id === item.id); return p ? priceFor(p,item.grams) : 0; }
 
