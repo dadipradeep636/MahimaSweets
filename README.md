@@ -11,7 +11,7 @@ npm.cmd install
 npm.cmd run dev
 ```
 
-Open the local URL printed in PowerShell (usually http://localhost:3000). Press Ctrl+C to stop. You do not need administrator access or an execution-policy change.
+Open the local URL printed in PowerShell (usually http://localhost:5173). Press Ctrl+C to stop. You do not need administrator access or an execution-policy change.
 
 The checked-in pnpm lockfile records the versions used to build the preview. For a reproducible installation, use pnpm 10.28.2 and `pnpm install --frozen-lockfile` instead of npm.
 
@@ -20,7 +20,7 @@ npm.cmd run typecheck
 npm.cmd run build
 ```
 
-The build produces an `out` folder suitable for static hosting. `next start` is not used with static export. Use `npm.cmd run dev` locally, or serve `out` with any static web server.
+The app now builds with the Sites Vinext starter integration to `dist/client` and `dist/server`. It runs on a Cloudflare Worker with D1 for optional accounts; static-only hosting cannot provide account sign-in. Use `npm.cmd run dev` or `npm.cmd start` for local previews.
 
 ## Spline
 
@@ -49,7 +49,7 @@ The included `SplineDisplay.tsx` uses the official React Spline package and repl
 - Store pickup or sample local delivery: ₹49 below ₹999, free from ₹999.
 - Required name, ten-digit sample phone, delivery address when selected, and demo acknowledgement.
 - Optional gift message, confirmation and downloadable itemised demo receipt.
-- No backend orders, payment processing, inventory management, customer accounts or admin panel.
+- No backend orders, payment processing, inventory management or admin panel. Optional customer accounts are backed by D1.
 
 ## Before public commercial launch
 
@@ -86,3 +86,16 @@ Readability: larger header navigation and product typography; solid full-width A
 
 ## Opening hero redesign
 Removed all floating copy labels and the stamp from the hero visual. New transparent platter and separate ladoo/kaju assets animate at different depths, with pointer/keyboard tilt, an animated shadow, pause/reset controls, off-screen pause and reduced-motion support. These are detailed raster layers composed in CSS 3D perspective, not a 360-degree mesh or Spline scene. Main image loads eagerly; the three assets are WebP.
+
+
+## Optional mobile/PIN accounts
+The shop is public and never requires an account for browsing, the cart or demo checkout. The header account button supports optional Indian mobile number + four-digit PIN setup and later sign-in on any device. No OTP or ChatGPT sign-in is used. A number is an unverified identifier; this feature must not be used as proof of phone ownership, for payment authority or to reveal sensitive records.
+
+D1 schema is in `db/schema.ts`; generated, schema-only Drizzle migrations live in `drizzle/` and are copied by the Sites build plugin. Set `ACCOUNT_PEPPER` to a cryptographically random server secret (at least 32 characters) through Sites environment settings. Never put the production value in source. Do not rotate it without a deliberate PIN migration/recovery plan: existing PIN hashes depend on it. Local previews use an ignored `.dev.vars` file; built Wrangler previews read it beside their configuration, and it must never be included in a deployment archive.
+
+PINs use a per-account salt, HMAC with the server pepper and PBKDF2-SHA256 (100,000 iterations). The app stores only hashed session tokens and uses Secure, HttpOnly, SameSite=Lax, host-only 30-day cookies. POST requests require a matching Origin. Atomic D1 limits cap attempts per number and IP, with daily caps as well. Users can delete their account with their current PIN; deletion revokes all sessions. Forgotten-PIN recovery is not implemented. Browser carts do not sync between devices.
+
+Run `pnpm db:generate` after schema edits. Build once, then apply the new SQL locally using the starter Wrangler D1 command with `--local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/<new-file>.sql`. Sites applies hosted migrations during deployment. `pnpm test:auth` tests guest sessions, cross-device sign-in, hashing/cookies, logout, invalid input, CSRF, throttling, expiry and account deletion.
+
+## Separate motion concept
+`/motion-preview/` provides Quiet luxury and Floating feast variants, independent floating layers, moving light, perspective tilt, pause/reset and reduced-motion support. The live homepage hero is unchanged. This is layered imagery in CSS 3D space, not a full 360-degree geometric model.

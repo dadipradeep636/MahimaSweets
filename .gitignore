@@ -5,4 +5,8 @@ out/
 *.tsbuildinfo
 .env*
 !.env.example
+dist/
+.wrangler/
+.vinext/
+.dev.vars
 *.tar.gz
