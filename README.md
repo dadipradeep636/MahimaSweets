@@ -1,6 +1,6 @@
 # Mahima Sweets
 
-A responsive Next.js storefront for Mahima Sweets, Gangavathi, Karnataka. Ivory, saffron and plum visual design, custom generated mithai imagery, a layered food preview with perspective and tilt, animated gift packaging, product details, weight selection, a persistent browser cart and demo checkout.
+A responsive Next.js storefront for Mahima Sweets, Gangavathi, Karnataka. "Royal festive" design (deep maroon and gold by default, with a warm ivory light theme), custom generated mithai imagery, an animated hero platter, an opening gift-box animation, product details, weight selection, a persistent browser cart and demo checkout.
 
 ## Run on Windows
 
@@ -22,22 +22,13 @@ npm.cmd run build
 
 The app now builds with the Sites Vinext starter integration to `dist/client` and `dist/server`. It runs on a Cloudflare Worker with D1 for optional accounts; static-only hosting cannot provide account sign-in. Use `npm.cmd run dev` or `npm.cmd start` for local previews.
 
-## Spline
-
-The initial version has a working native Three.js scene, so it does not depend on a placeholder or unrelated Spline model. To use your own Spline scene:
-
-1. Create a sweet-shop scene at https://spline.design/.
-2. Export it for React/Next.js and copy its `scene.splinecode` URL.
-3. Copy `.env.example` to `.env.local`, set `NEXT_PUBLIC_SPLINE_SCENE_URL` to that public URL, and restart/rebuild.
-
-The included `SplineDisplay.tsx` uses the official React Spline package and replaces the interactive platter automatically when configured. Spline hosting/export availability is subject to your Spline plan. A custom Spline scene was not authored or published for this preview.
-
 ## Editing
 
 - Products, sample prices, descriptions, allergens: `src/lib/products.ts`.
 - Main sections, demo checkout, sample contact details: `src/app/page.tsx`.
 - Responsive styling and animation: `src/app/globals.css`.
-- Layered product preview: `src/components/SweetScene.tsx`.
+- Hero platter animation: `src/components/HeroSweets.tsx`.
+- Badam Geer section: `src/components/BadamFeature.tsx`.
 - Custom imagery: `public/images/`.
 
 ## Shopping behaviour
@@ -55,7 +46,7 @@ The included `SplineDisplay.tsx` uses the official React Spline package and repl
 
 Replace sample prices. Shop contact details, location and opening hours have been supplied by the owner. Add the actual street address, verified product/ingredient/allergen information, shelf lives, food-business disclosures, delivery terms, tax handling, refund/cancellation policy and privacy policy. Connect inventory, a backend order system and a payment provider with verified server-side totals. Do not use this browser-only checkout for real paid orders.
 
-This preview deliberately labels sample data and does not claim certifications, years in business, customer reviews or guarantees that were not supplied. Checkout personal details are not transmitted or persisted by this application. Cart product IDs, pack sizes and quantities are saved in localStorage. Fonts load from Google Fonts; maps open Google Maps; a configured Spline scene loads from Spline. Hosting providers may retain standard access logs.
+This preview deliberately labels sample data and does not claim certifications, years in business, customer reviews or guarantees that were not supplied. Checkout personal details are not transmitted or persisted by this application. Cart product IDs, pack sizes and quantities are saved in localStorage. Fonts load from Google Fonts; maps open Google Maps; Hosting providers may retain standard access logs.
 
 ## Assets
 
@@ -97,5 +88,13 @@ PINs use a per-account salt, HMAC with the server pepper and PBKDF2-SHA256 (100,
 
 Run `pnpm db:generate` after schema edits. Build once, then apply the new SQL locally using the starter Wrangler D1 command with `--local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/<new-file>.sql`. Sites applies hosted migrations during deployment. `pnpm test:auth` tests guest sessions, cross-device sign-in, hashing/cookies, logout, invalid input, CSRF, throttling, expiry and account deletion.
 
-## Separate motion concept
-`/motion-preview/` provides Quiet luxury and Floating feast variants, independent floating layers, moving light, perspective tilt, pause/reset and reduced-motion support. The live homepage hero is unchanged. This is layered imagery in CSS 3D space, not a full 360-degree geometric model.
+## Royal festive redesign (Oct 2026)
+
+- Dark maroon-and-gold theme is now the default; the toggle switches to a warm ivory light theme and remembers the choice.
+- Hero: festive light string, rising glow particles, word-by-word headline with gold shimmer, floating platter with pointer parallax, rotating mandala, sparkles, and a quick-add "Kaju Burfi" card.
+- Scrolling marquee of sweet names; sections and product cards fade up as they come into view; gold scroll progress line; header shrinks on scroll.
+- "Our favourites" is a large bento layout. Product cards are smaller (4 per row on desktop, 2 on phones) with image zoom, shine sweep, quick-look label, price pop on pack change, and an Add button that flies the product into the bag.
+- Hot snacks get steam and rising embers; Badam Geer gets bubbles, orbits and floating almonds; the gift box lid opens with sweets and confetti popping out when it scrolls into view.
+- Bag opens as a side drawer. Cart, checkout preview, receipts, accounts, WhatsApp links, search and filters work as before.
+- The unused `/motion-preview/` concept page and the old `SweetScene`/`SplineDisplay` components were removed. The Spline packages remain in package.json but are no longer used.
+- Everything respects the "reduce motion" accessibility setting.
