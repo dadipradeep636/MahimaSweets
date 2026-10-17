@@ -125,6 +125,13 @@ button:disabled { cursor: not-allowed; opacity: 0.4; }
 .announcement:hover .announcement-track { animation-play-state: paused; }
 @keyframes marquee { to { transform: translateX(-50%); } }
 
+/* ---------- Owner notice banner (set at /admin) ---------- */
+.notice-bar { position: relative; z-index: 101; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 10px max(5vw, 16px); background: linear-gradient(90deg, var(--gold-lo), var(--gold-hi) 50%, var(--gold-lo)); background-size: 200% 100%; color: #2a1208; font-size: 15px; font-weight: 700; text-align: center; animation: noticeIn 0.6s cubic-bezier(.2,.8,.2,1), noticeShine 6s linear infinite; }
+.notice-icon { display: grid; place-items: center; flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; background: rgba(42,18,8,.12); animation: noticeWiggle 3s ease-in-out infinite; }
+@keyframes noticeIn { from { transform: translateY(-100%); opacity: 0; } }
+@keyframes noticeShine { to { background-position: -200% 0; } }
+@keyframes noticeWiggle { 0%, 80%, 100% { transform: rotate(0); } 85% { transform: rotate(-14deg); } 90% { transform: rotate(12deg); } 95% { transform: rotate(-6deg); } }
+
 /* ---------- Header ---------- */
 .header { position: sticky; top: 0; z-index: 100; isolation: isolate; border-bottom: 1px solid var(--line); transition: box-shadow 0.4s; }
 /* Blur lives on a background layer so the full-screen mobile menu can cover the whole viewport. */
@@ -290,6 +297,21 @@ button:disabled { cursor: not-allowed; opacity: 0.4; }
 .add-btn:hover svg { transform: rotate(90deg); }
 .add-btn.is-added { background: linear-gradient(135deg, #5ad08a, #2c9d5c); color: #fff; animation: addedPop 0.5s cubic-bezier(.5,1.8,.4,1); }
 @keyframes addedPop { 40% { transform: scale(1.15); } }
+
+/* Sold out today */
+.card.is-soldout .card-media img { filter: grayscale(.85) brightness(.75); }
+.card.is-soldout:hover { transform: none; box-shadow: none; border-color: var(--line); }
+.card.is-soldout:hover .card-media img { transform: none; }
+.card.is-soldout .card-price strong { opacity: .55; }
+.card-badge.is-soldout-badge { background: #3a3236; color: #fff; box-shadow: 0 6px 18px -8px rgba(0,0,0,.8); }
+.add-btn:disabled { background: var(--bg-3); color: var(--muted); box-shadow: none; opacity: 1; transform: none; }
+.add-btn:disabled svg { transform: none !important; }
+.button:disabled { opacity: .55; transform: none; box-shadow: none; }
+.cart-line.is-soldout { border-color: rgba(255,107,107,.45); }
+.cart-line.is-soldout img { filter: grayscale(1); }
+.line-soldout { display: inline-flex; align-items: center; gap: 5px; margin: -4px 0 6px; font-size: 12px; font-weight: 700; color: #ff8a8a; }
+.soldout-warning { display: flex; gap: 8px; align-items: center; padding: 10px 12px; border-radius: 12px; background: rgba(255,107,107,.12); color: #ff8a8a !important; font-size: 14px; }
+:root[data-theme='light'] .line-soldout, :root[data-theme='light'] .soldout-warning { color: #b42318 !important; }
 
 /* Steam over hot snacks */
 .steam { position: absolute; left: 25%; top: 2%; width: 50%; z-index: 1; fill: none; stroke: rgba(255,255,255,.75); stroke-width: 5; stroke-linecap: round; filter: blur(2.5px); pointer-events: none; }
@@ -651,6 +673,7 @@ button:disabled { cursor: not-allowed; opacity: 0.4; }
 @media (max-width: 720px) {
   body { font-size: 15px; }
   .announcement { font-size: 12px; height: 32px; }
+  .notice-bar { font-size: 14px; padding: 9px 14px; }
   .nav-wrap { height: 64px; gap: 10px; }
   .brand-mark { width: 38px; height: 38px; font-size: 20px; }
   .brand-name { font-size: 23px; }

@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, ArrowUpRight } from 'lucide-react';
-import { badam, money, priceFor, type Product } from '@/lib/products';
+import { Plus, ArrowUpRight, Ban } from 'lucide-react';
+import { money, priceFor, type Product } from '@/lib/products';
 
 const bubbles = Array.from({ length: 10 }, (_, i) => ({ left: `${12 + ((i * 29) % 76)}%`, delay: `${(i * 0.7) % 6}s`, size: `${5 + (i % 3) * 4}px` }));
 
-export default function BadamFeature({ add, open }: { add: (p: Product, size?: number, from?: HTMLElement) => void; open: (p: Product) => void }) {
+export default function BadamFeature({ badam, add, open }: { badam: Product; add: (p: Product, size?: number, from?: HTMLElement) => void; open: (p: Product) => void }) {
   const [size, setSize] = useState(250);
   return (
     <section id="badam-geer" className="badam section-pad" aria-labelledby="badam-title">
@@ -32,8 +32,8 @@ export default function BadamFeature({ add, open }: { add: (p: Product, size?: n
           </div>
         </div>
         <div className="badam-actions">
-          <button className="button primary" onClick={e => add(badam, size, e.currentTarget)}>
-            <Plus size={17} /> Add to bag
+          <button className="button primary" disabled={badam.soldOut} onClick={e => add(badam, size, e.currentTarget)}>
+            {badam.soldOut ? <><Ban size={17} /> Sold out today</> : <><Plus size={17} /> Add to bag</>}
           </button>
           <button className="text-link" onClick={() => open(badam)}>
             More about it <ArrowUpRight size={16} />

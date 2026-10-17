@@ -1,7 +1,7 @@
 export type Product = {
   id: string; name: string; subtitle: string; description: string; category: string;
   price: number; image: string; tag: string; allergens: string; storage: string;
-  unit?: 'ml'; baseWeight?: number; packs?: number[]; sale?: 'pairs' | 'pieces'; basePieces?: number; hot?: boolean; special?: string;
+  unit?: 'ml'; baseWeight?: number; packs?: number[]; sale?: 'pairs' | 'pieces'; basePieces?: number; hot?: boolean; special?: string; soldOut?: boolean;
 };
 export const products: Product[] = [
   { id: 'poothrekulu', name: 'Bellam Dryfruit Poothrekulu', subtitle: 'Paper-thin layers. Rich jaggery. A nutty little surprise.', description: 'Delicate rice-paper sheets wrapped around jaggery, ghee and crunchy dry fruits. Light, flaky and beautifully indulgent, with a little treasure in every fold.', category: 'Traditional', price: 420, sale: 'pieces', basePieces: 6, packs: [6,12], special: 'MAHIMA SPECIAL', image: '/images/poothrekulu.webp', tag: 'A delicate southern favourite', allergens: 'Milk (ghee), almonds, cashews and other nuts. Confirm actual ingredients with the shop.', storage: 'Handle gently and store airtight in a cool, dry place. Confirm shelf life with the shop.' },
@@ -35,5 +35,11 @@ export const defaultPack = (p: Product) => p.id === 'gift' ? 1000 : p.sale === '
 export const packOptions = (p: Product) => p.id === 'gift' ? [1000] : p.packs || [250,500,1000];
 export const packLabel = (p: Product, size: number) => p.id === 'gift' ? '1 kg assorted box' : p.sale === 'pairs' ? `${size * 2} pieces` : p.sale === 'pieces' ? `${size} pieces` : p.unit === 'ml' ? `${size} ml` : size === 1000 ? '1 kg' : `${size} g`;
 export const priceFor = (p: Product, size: number) => Math.round(p.price * (p.id === 'gift' ? 1 : p.sale === 'pairs' ? size : p.sale === 'pieces' ? size / (p.basePieces || 1) : size / (p.baseWeight || 500)));
-export function linePrice(item: CartItem) { const p = catalog.find(p => p.id === item.id); return p ? priceFor(p,item.grams) : 0; }
+export function linePrice(item: CartItem, list: Product[] = catalog) { const p = list.find(p => p.id === item.id); return p ? priceFor(p,item.grams) : 0; }
+/* Live shop state from /api/shop/: sold-out flags, owner price changes and the notice banner. */
+export type ShopState = { items: Record<string, { soldOut: boolean; price: number | null }>; notice: { text: string } | null };
+export const applyShopState = (p: Product, state: ShopState | null): Product => {
+  const live = state?.items[p.id];
+  return live ? { ...p, price: live.price ?? p.price, soldOut: live.soldOut } : p;
+};
 

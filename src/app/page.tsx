@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import BadamFeature from '@/components/BadamFeature';
 import ThemeToggle from '@/components/ThemeToggle';
 import AccountButton from '@/components/AccountButton';
 import HeroSweets from '@/components/HeroSweets';
 import { shop, whatsappLink, shopDirectionsUrl, shopMapUrl, shopMapEmbedUrl } from '@/lib/shop';
-import { ArrowRight, ArrowUpRight, ShoppingBag, Plus, Minus, X, MapPin, Phone, Clock3, Leaf, Gift, Heart, Sparkles, Check, Trash2, Search, Menu, Package, Truck, ChevronDown, CheckCircle2, Eye, Flame, Store } from 'lucide-react';
-import { products, namkeens, hotItems, gift, catalog, money, linePrice, defaultPack, packOptions, packLabel, priceFor, type Product, type CartItem } from '@/lib/products';
+import { ArrowRight, ArrowUpRight, ShoppingBag, Plus, Minus, X, MapPin, Phone, Clock3, Leaf, Gift, Heart, Sparkles, Check, Trash2, Search, Menu, Package, Truck, ChevronDown, CheckCircle2, Eye, Flame, Store, Megaphone, Ban } from 'lucide-react';
+import { products as baseProducts, namkeens as baseNamkeens, hotItems as baseHotItems, catalog as baseCatalog, money, linePrice, defaultPack, packOptions, packLabel, priceFor, applyShopState, type Product, type CartItem, type ShopState } from '@/lib/products';
 
 const categories = ['All sweets', 'Traditional', 'Dry fruit', 'Milk sweets', 'Syrupy'];
 const marqueeWords = ['Motichoor Ladoo', 'Kaju Burfi', 'Ghee Mysore Pak', 'Dharwad Peda', 'Gulab Jamun', 'Crispy Jalebi', 'Kesar Rasmalai', 'Badam Halwa', 'Crispy Murukku', 'Punjabi Samosa', 'Badam Geer', 'Poothrekulu'];
@@ -72,14 +72,18 @@ function ProductCard({ product: p, index, open, add, className = '' }: { product
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
   return (
-    <article className={`card ${p.hot ? 'is-hot' : ''} ${className}`} style={{ '--i': index } as React.CSSProperties}>
+    <article className={`card ${p.hot ? 'is-hot' : ''} ${p.soldOut ? 'is-soldout' : ''} ${className}`} style={{ '--i': index } as React.CSSProperties}>
       <button className="card-media" onClick={() => open(p)} aria-label={`View ${p.name} details`}>
         <img src={p.image} alt={p.name} loading="lazy" />
         {p.hot && <SteamWaves />}
-        <span className={`card-badge ${p.special ? 'is-special' : ''}`}>
-          {p.hot && <Flame size={12} />}
-          {p.special || p.tag}
-        </span>
+        {p.soldOut ? (
+          <span className="card-badge is-soldout-badge"><Ban size={12} /> Sold out today</span>
+        ) : (
+          <span className={`card-badge ${p.special ? 'is-special' : ''}`}>
+            {p.hot && <Flame size={12} />}
+            {p.special || p.tag}
+          </span>
+        )}
         <span className="card-peek">
           <Eye size={15} /> Quick look
         </span>
@@ -106,7 +110,8 @@ function ProductCard({ product: p, index, open, add, className = '' }: { product
           </div>
           <button
             className={`add-btn ${added ? 'is-added' : ''}`}
-            aria-label={`Add ${packLabel(p, pack)} of ${p.name} to bag`}
+            disabled={p.soldOut}
+            aria-label={p.soldOut ? `${p.name} is sold out today` : `Add ${packLabel(p, pack)} of ${p.name} to bag`}
             onClick={e => {
               add(p, pack, e.currentTarget);
               setAdded(true);
@@ -114,8 +119,8 @@ function ProductCard({ product: p, index, open, add, className = '' }: { product
               timer.current = setTimeout(() => setAdded(false), 1500);
             }}
           >
-            {added ? <Check size={17} /> : <Plus size={17} />}
-            <span>{added ? 'Added' : 'Add'}</span>
+            {p.soldOut ? <Ban size={16} /> : added ? <Check size={17} /> : <Plus size={17} />}
+            <span>{p.soldOut ? 'Sold out' : added ? 'Added' : 'Add'}</span>
           </button>
         </div>
       </div>
@@ -174,13 +179,36 @@ export default function Home() {
   const [order, setOrder] = useState<{ id: string; total: number; method: string; lines: string[]; subtotal: number; delivery: number } | null>(null);
   const [policy, setPolicy] = useState<string | null>(null);
   const [giftNote, setGiftNote] = useState('');
+  const [shopState, setShopState] = useState<ShopState | null>(null);
+
+  /* Live stock, prices and notice set by the owner at /admin. Refreshes every minute and when the tab comes back into view. */
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      fetch('/api/shop/', { cache: 'no-store' })
+        .then(r => (r.ok ? r.json() : null))
+        .then(data => { if (alive && data && typeof data === 'object' && data.items) setShopState(data); })
+        .catch(() => {});
+    load();
+    const timer = setInterval(load, 60000);
+    const onVisible = () => { if (document.visibilityState === 'visible') load(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { alive = false; clearInterval(timer); document.removeEventListener('visibilitychange', onVisible); };
+  }, []);
+  const catalog = useMemo(() => baseCatalog.map(p => applyShopState(p, shopState)), [shopState]);
+  const byId = (id: string) => catalog.find(p => p.id === id)!;
+  const products = baseProducts.map(p => byId(p.id));
+  const namkeens = baseNamkeens.map(p => byId(p.id));
+  const hotItems = baseHotItems.map(p => byId(p.id));
+  const gift = byId('gift');
+  const badam = byId('badam-geer');
 
   useEffect(() => {
     try {
       const raw = JSON.parse(localStorage.getItem('mahima-cart-v1') || '[]');
       if (Array.isArray(raw))
         setCart(raw.filter((i: CartItem) => {
-          const p = i && catalog.find(p => p.id === i.id);
+          const p = i && baseCatalog.find(p => p.id === i.id);
           return p && packOptions(p).includes(i.grams) && Number.isInteger(i.quantity) && i.quantity > 0 && i.quantity <= 20;
         }));
     } catch {}
@@ -233,13 +261,18 @@ export default function Home() {
     document.body.style.overflow = mobileNav ? 'hidden' : '';
   }, [mobileNav]);
 
+  const soldOutInBag = cart.filter(i => byId(i.id)?.soldOut);
   const count = cart.reduce((s, i) => s + i.quantity, 0);
-  const subtotal = cart.reduce((s, i) => s + linePrice(i) * i.quantity, 0);
+  const subtotal = cart.reduce((s, i) => s + linePrice(i, catalog) * i.quantity, 0);
   const delivery = fulfilment === 'delivery' && subtotal > 0 && subtotal < 999 ? 49 : 0;
   const filtered = (query ? catalog.filter(p => p.id !== 'gift') : products).filter(
     p => (query || category === 'All sweets' || p.category === category) && `${p.name} ${p.subtitle} ${p.description}`.toLowerCase().includes(query.toLowerCase()),
   );
   const add: AddFn = (product, grams = defaultPack(product), from) => {
+    if (product.soldOut) {
+      setToast(`Sorry, ${product.name} is sold out today`);
+      return;
+    }
     setCart(items => {
       const exists = items.find(i => i.id === product.id && i.grams === grams);
       if (exists) return items.map(i => (i === exists ? { ...i, quantity: Math.min(20, i.quantity + 1) } : i));
@@ -260,6 +293,7 @@ export default function Home() {
     setCheckout(false);
   };
   const nav = () => setMobileNav(false);
+  const current = selected ? byId(selected.id) : null;
   const navLinks: [string, string][] = [['#favourites', 'Specials'], ['#collection', 'Sweets'], ['#namkeens', 'Namkeens'], ['#hot-snacks', 'Hot & Crispy'], ['#gifting', 'Gift boxes'], ['#visit', 'Visit us']];
 
   return (
@@ -267,6 +301,12 @@ export default function Home() {
       <a href="#main" className="skip-link">Skip to content</a>
       <div className="scroll-progress" aria-hidden="true" />
 
+      {shopState?.notice && (
+        <div className="notice-bar" role="status">
+          <span className="notice-icon"><Megaphone size={16} /></span>
+          <span>{shopState.notice.text}</span>
+        </div>
+      )}
       <div className="announcement">
         <div className="announcement-track">
           {[0, 1].map(k => (
@@ -490,7 +530,7 @@ export default function Home() {
           <p className="fine-print">Hot snacks are made through the day. Call to check what’s fresh right now.</p>
         </section>
 
-        <BadamFeature add={add} open={openProduct} />
+        <BadamFeature badam={badam} add={add} open={openProduct} />
 
         <section id="gifting" className="section-pad gifting">
           <div className="gift-panel reveal">
@@ -541,8 +581,8 @@ export default function Home() {
                   <strong>{money(gift.price)}</strong>
                   <span>per celebration box</span>
                 </div>
-                <button className="button primary glow" onClick={() => openProduct(gift)}>
-                  Make someone’s day <Gift size={18} />
+                <button className="button primary glow" disabled={gift.soldOut} onClick={() => openProduct(gift)}>
+                  {gift.soldOut ? <>Sold out today <Ban size={18} /></> : <>Make someone’s day <Gift size={18} /></>}
                 </button>
               </div>
               <p className="gift-small">
@@ -698,44 +738,44 @@ export default function Home() {
         </div>
       )}
 
-      {selected && (
-        <Modal title={selected.name} onClose={() => setSelected(null)} className="product-modal">
-          <div className={`detail-image ${selected.hot ? 'is-hot' : ''}`}>
-            <img src={selected.image} alt={selected.name} />
-            {selected.hot && <SteamWaves />}
+      {current && (
+        <Modal title={current.name} onClose={() => setSelected(null)} className="product-modal">
+          <div className={`detail-image ${current.hot ? 'is-hot' : ''}`}>
+            <img src={current.image} alt={current.name} />
+            {current.hot && <SteamWaves />}
           </div>
           <div className="detail-copy">
-            <p className="eyebrow">{selected.special || selected.tag}</p>
-            <h2>{selected.name}</h2>
-            <p className="detail-desc">{selected.description}</p>
-            {packOptions(selected).length > 1 && (
+            <p className="eyebrow">{current.special || current.tag}</p>
+            <h2>{current.name}</h2>
+            <p className="detail-desc">{current.description}</p>
+            {packOptions(current).length > 1 && (
               <>
                 <span className="field-label">Choose your pack</span>
                 <div className="pack-chips big">
-                  {packOptions(selected).map(size => (
+                  {packOptions(current).map(size => (
                     <button key={size} className={weight === size ? 'active' : ''} onClick={() => setWeight(size)} aria-pressed={weight === size}>
-                      {packLabel(selected, size)}
+                      {packLabel(current, size)}
                     </button>
                   ))}
                 </div>
               </>
             )}
             <div className="detail-price">
-              <strong key={weight} className="price-pop">{money(priceFor(selected, weight))}</strong>
-              <small>{packLabel(selected, weight)}</small>
+              <strong key={weight} className="price-pop">{money(priceFor(current, weight))}</strong>
+              <small>{packLabel(current, weight)}</small>
             </div>
-            <button className="button primary full glow" onClick={e => { add(selected, weight, e.currentTarget); setSelected(null); }}>
-              Add to bag <Plus size={18} />
+            <button className="button primary full glow" disabled={current.soldOut} onClick={e => { add(current, weight, e.currentTarget); setSelected(null); }}>
+              {current.soldOut ? <>Sold out today <Ban size={18} /></> : <>Add to bag <Plus size={18} /></>}
             </button>
-            <a className="product-whatsapp" href={whatsappLink(`Hi Mahima Sweets! Could you confirm availability and pricing for ${selected.name}, ${packLabel(selected, weight)}?`)} target="_blank" rel="noopener noreferrer">
+            <a className="product-whatsapp" href={whatsappLink(`Hi Mahima Sweets! Could you confirm availability and pricing for ${current.name}, ${packLabel(current, weight)}?`)} target="_blank" rel="noopener noreferrer">
               <WhatsAppMark size={18} /> Ask about this on WhatsApp <ArrowUpRight size={14} />
             </a>
             <details className="ingredient-details">
               <summary>
                 Allergens &amp; storage <ChevronDown size={16} />
               </summary>
-              <p><strong>Allergens:</strong> {selected.allergens}</p>
-              <p>{selected.storage}</p>
+              <p><strong>Allergens:</strong> {current.allergens}</p>
+              <p>{current.storage}</p>
               <small>Please confirm ingredients with the shop.</small>
             </details>
           </div>
@@ -764,11 +804,12 @@ export default function Home() {
                 {cart.map(i => {
                   const p = catalog.find(p => p.id === i.id)!;
                   return (
-                    <div className="cart-line" key={`${i.id}-${i.grams}`}>
+                    <div className={`cart-line ${p.soldOut ? 'is-soldout' : ''}`} key={`${i.id}-${i.grams}`}>
                       <img src={p.image} alt={p.name} />
                       <div className="line-info">
                         <h3>{p.name}</h3>
-                        <p>{packLabel(p, i.grams)} · {money(linePrice(i))}</p>
+                        <p>{packLabel(p, i.grams)} · {money(linePrice(i, catalog))}</p>
+                        {p.soldOut && <span className="line-soldout"><Ban size={13} /> Sold out today – please remove</span>}
                         <div className="quantity">
                           <button aria-label={`Decrease ${p.name} quantity`} onClick={() => update(i.id, i.grams, -1)}><Minus size={13} /></button>
                           <span>{i.quantity}</span>
@@ -776,7 +817,7 @@ export default function Home() {
                         </div>
                       </div>
                       <div className="line-end">
-                        <strong>{money(linePrice(i) * i.quantity)}</strong>
+                        <strong>{money(linePrice(i, catalog) * i.quantity)}</strong>
                         <button aria-label={`Remove ${p.name}`} onClick={() => setCart(c => c.filter(x => x !== i))}><Trash2 size={15} /></button>
                       </div>
                     </div>
@@ -789,7 +830,8 @@ export default function Home() {
                   <strong>{money(subtotal)}</strong>
                 </div>
                 <p>Delivery is worked out at checkout. Free delivery from ₹999.</p>
-                <button className="button primary full glow" onClick={() => setCheckout(true)}>
+                {soldOutInBag.length > 0 && <p className="soldout-warning"><Ban size={15} /> Some items in your bag are sold out today. Remove them to continue.</p>}
+                <button className="button primary full glow" disabled={soldOutInBag.length > 0} onClick={() => setCheckout(true)}>
                   Continue to checkout <ArrowRight size={17} />
                 </button>
                 <button className="continue-shopping" onClick={closeCart}>Keep browsing</button>
@@ -800,6 +842,7 @@ export default function Home() {
               className="checkout-form"
               onSubmit={e => {
                 e.preventDefault();
+                if (soldOutInBag.length) { setCheckout(false); return; }
                 setOrder({
                   id: `MS-DEMO-${Date.now().toString().slice(-6)}`,
                   total: subtotal + delivery,
@@ -808,7 +851,7 @@ export default function Home() {
                   delivery,
                   lines: cart.map(i => {
                     const p = catalog.find(p => p.id === i.id)!;
-                    return `${p.name} — ${packLabel(p, i.grams)} × ${i.quantity}: ${money(linePrice(i) * i.quantity)}`;
+                    return `${p.name} — ${packLabel(p, i.grams)} × ${i.quantity}: ${money(linePrice(i, catalog) * i.quantity)}`;
                   }),
                 });
                 closeCart();

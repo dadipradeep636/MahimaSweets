@@ -98,3 +98,22 @@ Run `pnpm db:generate` after schema edits. Build once, then apply the new SQL lo
 - Bag opens as a side drawer. Cart, checkout preview, receipts, accounts, WhatsApp links, search and filters work as before.
 - The unused `/motion-preview/` concept page and the old `SweetScene`/`SplineDisplay` components were removed. The Spline packages remain in package.json but are no longer used.
 - Everything respects the "reduce motion" accessibility setting.
+
+## Shop controls (/admin)
+
+The owner page at `/admin` lets the shop owner, from a phone:
+
+- switch any item between **Available** and **Sold out** (the website greys it out, shows "Sold out today" and disables Add; anyone with it already in their bag is asked to remove it before checkout),
+- **change prices** (the price is for the default pack shown next to it; other pack sizes scale automatically, e.g. 1 kg = 2 × the 500 g price; "Original ₹…" restores the built-in price),
+- show a **notice banner** at the top of the website (up to 160 characters, on/off),
+- **Mark everything available** in one go (tap twice to confirm).
+
+Customers see changes within a minute (or immediately on refresh).
+
+**Setup (one time):** add a hosting secret named `ADMIN_PASSWORD` (at least 10 characters) alongside the existing `ACCOUNT_PEPPER`, then redeploy. Without it the controls stay locked. The new database tables come from `drizzle/0001_owner_controls.sql` and are applied with the existing migrations.
+
+**Security:** owner sign-in is separate from customer accounts; the session cookie is HttpOnly, Secure and SameSite=Strict and lasts 12 hours; 5 wrong passwords from one connection lock sign-in for 15 minutes (30 per hour overall); every change is checked on the server against the real product list; the page is hidden from search engines.
+
+Code: `src/app/admin/`, `src/lib/shop-server.mjs`, `src/app/api/shop/`, `src/app/api/admin/`. Tests: `npm test`.
+
+For local testing, put `ACCOUNT_PEPPER` and `ADMIN_PASSWORD` test values in `.dev.vars` (git-ignored) and apply migrations to the local database.
