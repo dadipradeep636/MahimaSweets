@@ -19,27 +19,6 @@ const faqs = [
   ['Does online checkout place a real order?', 'Not yet. Online checkout is a preview: no payment is taken and no order is sent to the shop. To order today, call us or message us on WhatsApp.'],
 ];
 
-/* Festive light string across the top of the hero. Points are calculated once, so markup is identical on server and browser. */
-const lightPoints = Array.from({ length: 49 }, (_, i) => {
-  const x = i * 25;
-  const y = 6 + 34 * Math.sin((Math.PI * (x % 300)) / 300);
-  return [x, Math.round(y * 10) / 10] as const;
-});
-const lightPath = 'M' + Array.from({ length: 121 }, (_, i) => `${i * 10} ${Math.round((6 + 34 * Math.sin((Math.PI * ((i * 10) % 300)) / 300)) * 10) / 10}`).join(' L');
-
-function FestiveLights() {
-  return (
-    <svg className="festive-lights" viewBox="0 0 1200 60" preserveAspectRatio="none" aria-hidden="true">
-      <path d={lightPath} />
-      {lightPoints.map(([x, y], i) => (
-        <g key={i} transform={`translate(${x} ${y})`}>
-          <circle className={`bulb b${i % 3}`} r="4" cy="5" style={{ animationDelay: `${(i % 6) * 0.35}s` }} />
-        </g>
-      ))}
-    </svg>
-  );
-}
-
 function Modal({ children, onClose, title, className = '' }: { children: React.ReactNode; onClose: () => void; title: string; className?: string }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -346,7 +325,6 @@ export default function Home() {
 
       <main id="main">
         <section className="hero">
-          <FestiveLights />
           <div className="hero-bokeh" aria-hidden="true">
             {Array.from({ length: 12 }, (_, i) => (
               <i key={i} style={{ left: `${(i * 41 + 5) % 100}%`, animationDelay: `${(i * 1.3) % 9}s`, animationDuration: `${9 + (i % 4) * 3}s` }} />
