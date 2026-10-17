@@ -96,3 +96,7 @@ html[data-theme=dark]{color-scheme:dark;--paper:#1c1719;--ink:#f5eadb;--muted:#c
 .visit .contact-whatsapp{display:inline-flex;align-items:center;gap:7px;margin-top:5px;font-size:13px;font-weight:600;line-height:1.7;text-decoration:underline;text-underline-offset:4px}
 .visit .contact-row a:focus-visible{outline:2px solid var(--saffron);outline-offset:5px;border-radius:2px}
 @media(max-width:600px){.visit .contact-row{font-size:12px}.visit .contact-phone{font-size:13px}.visit .secondary-contact,.visit .contact-whatsapp{font-size:12px}}
+.header .brand-name{display:block;font-family:'Playfair Display',Georgia,serif;font-weight:500;font-size:1.16em;line-height:1.1;letter-spacing:-.9px;color:#825928;text-shadow:.5px .5px #cba56f,1px 1px #c09a65,1.5px 1.5px #ad8555,3px 4px 5px #60422024;transform-origin:center;animation:brand-name-breathe 7s ease-in-out infinite}
+[data-theme=dark] .header .brand-name{color:#edce98;text-shadow:1px 1px #997244,2px 2px #6a482b,3px 3px #482f21,4px 6px 7px #0008}
+@keyframes brand-name-breathe{0%,100%{transform:perspective(650px) rotateX(2deg) translateZ(0)}50%{transform:perspective(650px) rotateX(-3deg) translateZ(5px)}}
+@media(prefers-reduced-motion:reduce){.header .brand-name{animation:none}}
