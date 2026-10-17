@@ -53,7 +53,7 @@ The included `SplineDisplay.tsx` uses the official React Spline package and repl
 
 ## Before public commercial launch
 
-Replace sample prices, zero-filled contact number and opening hours. Add the actual street address, verified product/ingredient/allergen information, shelf lives, food-business disclosures, delivery terms, tax handling, refund/cancellation policy and privacy policy. Connect inventory, a backend order system and a payment provider with verified server-side totals. Do not use this browser-only checkout for real paid orders.
+Replace sample prices. Shop contact details, location and opening hours have been supplied by the owner. Add the actual street address, verified product/ingredient/allergen information, shelf lives, food-business disclosures, delivery terms, tax handling, refund/cancellation policy and privacy policy. Connect inventory, a backend order system and a payment provider with verified server-side totals. Do not use this browser-only checkout for real paid orders.
 
 This preview deliberately labels sample data and does not claim certifications, years in business, customer reviews or guarantees that were not supplied. Checkout personal details are not transmitted or persisted by this application. Cart product IDs, pack sizes and quantities are saved in localStorage. Fonts load from Google Fonts; maps open Google Maps; a configured Spline scene loads from Spline. Hosting providers may retain standard access logs.
 
@@ -66,7 +66,7 @@ Generated with the built-in image-generation tool, then copied into this project
 Production static build and TypeScript checks passed. Browser checks covered 250 g pricing, quantity totals, persistence across refresh, sample delivery fees and demo confirmation. The mobile layout was visually inspected at a narrow viewport. Spline integration requires a real published scene URL and has not been tested with a custom shop scene.
 
 ## Expanded menu and visual polish
-The storefront now has nine sweets, a dedicated Namkeens collection (Murukku, Masala Mixture, Aloo Bhujia, Banana Chips), and Hot & Crispy samosa/pakodi cards with animated steam. All are included in search, product details, the saved cart and demo receipt. Samosas use 2/4/6-piece packs; namkeens and pakodi use 100/250/500 g. The low-detail procedural platter was replaced by a detailed generated food image with CSS perspective, tilting and layered motion; it is not a 360-degree geometric food model. The optional Spline integration remains available. Reduced-motion preferences disable motion. Image prompts are recorded in ASSET-PROMPTS-EXPANSION.md.
+The storefront now has nine sweets, a dedicated Namkeens collection (Murukku, Masala Mixture, Aloo Bhujia, Roasted Cornflour Ground Nuts), and Hot & Crispy samosa/pakodi cards with animated steam. All are included in search, product details, the saved cart and demo receipt. Samosas use 2/4/6-piece packs; namkeens and pakodi use 100/250/500 g. The low-detail procedural platter was replaced by a detailed generated food image with CSS perspective, tilting and layered motion; it is not a 360-degree geometric food model. The optional Spline integration remains available. Reduced-motion preferences disable motion. Image prompts are recorded in ASSET-PROMPTS-EXPANSION.md.
 
 
 

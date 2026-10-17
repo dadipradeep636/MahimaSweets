@@ -77,3 +77,9 @@ One single exquisite Indian motichoor ladoo floating isolated on a transparent b
 ## hero-kaju-cutout
 Built-in imagegen, transparent.
 One single elegant diamond-shaped kaju katli Indian cashew sweet, ivory beige dense fudgy texture with natural delicate edible silver leaf on the top face. Floating in a three-quarter perspective with visible thick beveled sides, long diamond axis diagonally from bottom left to top right. Photorealistic food advertising render, refined soft light upper left, enticing realistic detail. Centered isolated cutout on transparent background, generous transparent margin. No plate no hands no background no glow no text no other sweets. Square composition.
+# Groundnuts replacement — 17 October 2026
+
+Asset: `public/images/groundnuts.webp`. Generated with the built-in image generation tool, then resized to 960 × 960 and encoded as WebP. Illustrative catalog photography.
+
+Prompt: Square food catalog photograph for an Indian sweets and namkeen shop. A small shallow ceramic bowl heaped with roasted cornflour-coated groundnuts (peanuts), golden tan crisp lightly rough cornflour shells, recognizable individual oval peanut shapes. A few scattered coated peanuts beside the bowl. Close three-quarter overhead view, centered bowl with generous safe margins. Warm cream tabletop, soft natural side light, realistic food texture. No text, logos, packaging, banana chips or garnish. Illustrative catalog photo, not a claim of actual shop product.
+
