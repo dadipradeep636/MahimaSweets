@@ -439,7 +439,8 @@ button:disabled { cursor: not-allowed; opacity: 0.4; }
 .signature { margin-top: 48px; text-align: center; font-family: 'Playfair Display', serif; font-style: italic; font-size: 30px; color: var(--gold); }
 
 /* ---------- FAQ ---------- */
-.faq { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 50px; align-items: start; }
+.faq { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 50px; align-items: start; padding-bottom: clamp(24px, 3vw, 40px); }
+.faq + .visit { padding-top: clamp(24px, 3vw, 40px); }
 .faq-list { display: grid; gap: 12px; }
 .faq details { border-radius: 18px; background: var(--card); border: 1px solid var(--line); transition: border-color 0.3s, background 0.3s; overflow: hidden; }
 .faq details[open] { border-color: var(--line-strong); background: var(--card-2); }
