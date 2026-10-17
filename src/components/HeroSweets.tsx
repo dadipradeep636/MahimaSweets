@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef } from 'react';
-import { Plus } from 'lucide-react';
 
 /* Decorative values are fixed (not random) so the server and browser render the same markup. */
 const sparkles = Array.from({ length: 16 }, (_, i) => ({
@@ -27,7 +26,7 @@ function Mandala() {
   );
 }
 
-export default function HeroSweets({ onPick }: { onPick: (el: HTMLElement) => void }) {
+export default function HeroSweets() {
   const ref = useRef<HTMLDivElement>(null);
   function move(x: number, y: number) {
     ref.current?.style.setProperty('--mx', x.toFixed(3));
@@ -68,17 +67,7 @@ export default function HeroSweets({ onPick }: { onPick: (el: HTMLElement) => vo
           <i key={i} style={{ left: s.left, top: s.top, animationDelay: s.delay, width: s.size, height: s.size }} />
         ))}
       </div>
-      <div className="hv-card">
-        <img src="/images/katli.webp" alt="" />
-        <div>
-          <span>Mahima favourite</span>
-          <strong>Kaju Burfi</strong>
-          <small>₹460 · 500 g</small>
-        </div>
-        <button type="button" aria-label="Add 500 g of Kaju Burfi to bag" onClick={e => onPick(e.currentTarget)}>
-          <Plus size={18} />
-        </button>
-      </div>
+
     </div>
   );
 }

@@ -260,7 +260,6 @@ export default function Home() {
     setCheckout(false);
   };
   const nav = () => setMobileNav(false);
-  const katli = catalog.find(p => p.id === 'katli')!;
   const navLinks: [string, string][] = [['#favourites', 'Specials'], ['#collection', 'Sweets'], ['#namkeens', 'Namkeens'], ['#hot-snacks', 'Hot & Crispy'], ['#gifting', 'Gift boxes'], ['#visit', 'Visit us']];
 
   return (
@@ -358,7 +357,7 @@ export default function Home() {
               <li><Gift size={15} /> Gift boxes</li>
             </ul>
           </div>
-          <HeroSweets onPick={el => add(katli, 500, el)} />
+          <HeroSweets />
           <a className="scroll-cue" href="#favourites" aria-label="Scroll to our specials">
             <span />
           </a>
