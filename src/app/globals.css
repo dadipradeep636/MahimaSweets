@@ -299,7 +299,7 @@ button:disabled { cursor: not-allowed; opacity: 0.4; }
 @keyframes steam { 0% { stroke-dashoffset: 260; opacity: 0; } 25% { opacity: .9; } 100% { stroke-dashoffset: -260; opacity: 0; transform: translateY(-20px); } }
 
 /* ---------- Specials bento ---------- */
-.specials { background: radial-gradient(ellipse 50% 40% at 50% 0%, rgba(123,29,54,.28), transparent 70%); }
+.specials { background: radial-gradient(ellipse 50% 40% at 50% 0%, rgba(123,29,54,.28), transparent 70%); padding-bottom: clamp(24px, 3vw, 40px); }
 .bento { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(260px, auto)); gap: clamp(14px, 1.6vw, 24px); }
 .spot { min-height: 100%; }
 .spot .card-media { position: absolute; inset: 0; aspect-ratio: auto; height: 100%; }
@@ -322,6 +322,7 @@ button:disabled { cursor: not-allowed; opacity: 0.4; }
 
 /* ---------- Collection toolbar ---------- */
 .collection { background: var(--bg); }
+.specials + .collection { padding-top: clamp(24px, 3vw, 40px); }
 .toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 34px; }
 .tabs { position: relative; display: flex; flex-wrap: wrap; gap: 8px; }
 .tabs button { min-height: 44px; padding: 10px 20px; border-radius: 999px; border: 1px solid var(--line); font-size: 15px; font-weight: 500; color: var(--ink-soft); transition: all 0.3s cubic-bezier(.2,.8,.2,1); }
