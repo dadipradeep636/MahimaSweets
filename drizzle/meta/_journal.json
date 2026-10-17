@@ -15,6 +15,13 @@
       "when": 1792261339917,
       "tag": "0001_owner_controls",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1792263608617,
+      "tag": "0002_products_and_photos",
+      "breakpoints": true
     }
   ]
 }

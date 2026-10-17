@@ -117,3 +117,12 @@ Customers see changes within a minute (or immediately on refresh).
 Code: `src/app/admin/`, `src/lib/shop-server.mjs`, `src/app/api/shop/`, `src/app/api/admin/`. Tests: `npm test`.
 
 For local testing, put `ACCOUNT_PEPPER` and `ADMIN_PASSWORD` test values in `.dev.vars` (git-ignored) and apply migrations to the local database.
+
+### Adding and editing items (/admin)
+
+- **Add new item**: photo (cropped square and resized in the browser), name, where it shows (Sweets / Namkeens / Hot & Crispy, plus sweet type for the filters), how it is sold (250 g · 500 g · 1 kg priced per 1 kg; 100 g · 250 g · 500 g priced per 250 g; or by pieces with 1×/2× packs), price. Optional: short line, label on the photo (red "special" style), description, allergens, storage. A live preview uses the real website card component (`src/components/ProductCard.tsx`).
+- **Edit any item**, including the built-in 19: text, photo, label, sweet type and price. Built-in items keep their section and pack sizes; "Undo all my changes" restores the original. Added items can be fully changed or deleted.
+- **Hide** any item without deleting it; hidden items disappear from the menu, search and showcase, and block checkout if already in a bag.
+- **"Our favourites" showcase**: pick the four items; deleted or hidden picks fall back to the originals.
+
+Data: `shop_products` (edits and added items) and `shop_images` (photos as base64, served from `/api/image/?id=…` with long caching) from `drizzle/0002_products_and_photos.sql`. Upload endpoint `/api/admin/image/` accepts JPEG/PNG/WebP up to 1.5 MB (checked by file signature); unused uploads are removed after a day. The website builds its menu with `buildCatalog()` in `src/lib/products.ts`.

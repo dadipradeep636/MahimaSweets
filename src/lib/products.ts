@@ -1,7 +1,7 @@
 export type Product = {
   id: string; name: string; subtitle: string; description: string; category: string;
   price: number; image: string; tag: string; allergens: string; storage: string;
-  unit?: 'ml'; baseWeight?: number; packs?: number[]; sale?: 'pairs' | 'pieces'; basePieces?: number; hot?: boolean; special?: string; soldOut?: boolean;
+  unit?: 'ml'; baseWeight?: number; packs?: number[]; sale?: 'pairs' | 'pieces'; basePieces?: number; hot?: boolean; special?: string; soldOut?: boolean; hidden?: boolean; custom?: boolean;
 };
 export const products: Product[] = [
   { id: 'poothrekulu', name: 'Bellam Dryfruit Poothrekulu', subtitle: 'Paper-thin layers. Rich jaggery. A nutty little surprise.', description: 'Delicate rice-paper sheets wrapped around jaggery, ghee and crunchy dry fruits. Light, flaky and beautifully indulgent, with a little treasure in every fold.', category: 'Traditional', price: 420, sale: 'pieces', basePieces: 6, packs: [6,12], special: 'MAHIMA SPECIAL', image: '/images/poothrekulu.webp', tag: 'A delicate southern favourite', allergens: 'Milk (ghee), almonds, cashews and other nuts. Confirm actual ingredients with the shop.', storage: 'Handle gently and store airtight in a cool, dry place. Confirm shelf life with the shop.' },
@@ -38,10 +38,104 @@ export const packOptions = (p: Product) => p.id === 'gift' ? [1000] : p.packs ||
 export const packLabel = (p: Product, size: number) => p.id === 'gift' ? '1 kg assorted box' : p.sale === 'pairs' ? `${size * 2} pieces` : p.sale === 'pieces' ? `${size} pieces` : p.unit === 'ml' ? `${size} ml` : size === 1000 ? '1 kg' : `${size} g`;
 export const priceFor = (p: Product, size: number) => Math.round(p.price * (p.id === 'gift' ? 1 : p.sale === 'pairs' ? size : p.sale === 'pieces' ? size / (p.basePieces || 1) : size / (p.baseWeight || 500)));
 export function linePrice(item: CartItem, list: Product[] = catalog) { const p = list.find(p => p.id === item.id); return p ? priceFor(p,item.grams) : 0; }
-/* Live shop state from /api/shop/: sold-out flags, owner price changes and the notice banner. */
-export type ShopState = { items: Record<string, { soldOut: boolean; price: number | null }>; notice: { text: string } | null };
+/* Live shop state from /api/shop/: sold-out flags, price changes, product edits, added items, favourites and the notice banner. */
+export type Section = 'sweets' | 'namkeens' | 'hot' | 'drink' | 'gift';
+export type Sell = { type: 'large' | 'small' | 'pieces'; pieces?: number };
+export type ProductData = {
+  name?: string; subtitle?: string; description?: string; tag?: string; special?: boolean; allergens?: string; storage?: string;
+  category?: string; section?: 'sweets' | 'namkeens' | 'hot'; sell?: Sell; price?: number; image?: string;
+};
+export type ProductRecord = { id: string; custom: boolean; hidden: boolean; data: ProductData };
+export type ShopState = {
+  items: Record<string, { soldOut: boolean; price: number | null }>;
+  notice: { text: string } | null;
+  products?: ProductRecord[];
+  favourites?: string[] | null;
+};
 export const applyShopState = (p: Product, state: ShopState | null): Product => {
   const live = state?.items[p.id];
   return live ? { ...p, price: live.price ?? p.price, soldOut: live.soldOut } : p;
 };
 
+export const sweetCategories = ['Traditional', 'Dry fruit', 'Milk sweets', 'Syrupy'];
+export const sectionOf = (p: Product): Section =>
+  p.id === 'gift' ? 'gift' : p.id === 'badam-geer' ? 'drink' : p.category === 'Namkeens' ? 'namkeens' : p.category === 'Hot & Crispy' ? 'hot' : 'sweets';
+export const sectionNames: Record<Section, string> = { sweets: 'Sweets', namkeens: 'Namkeens', hot: 'Hot & Crispy', drink: 'Drink', gift: 'Gift box' };
+export const defaultFavourites = ['poothrekulu', 'katli', 'dharwad', 'mysore'];
+const DEFAULT_ALLERGENS = 'Please ask the shop about ingredients and allergens.';
+const DEFAULT_STORAGE = 'Please ask the shop about storage and shelf life.';
+
+/* How an added item is sold → pack sizes. Prices are always for the first (default) pack shown. */
+export const sellPacks = (sell: Sell): Pick<Product, 'packs' | 'baseWeight' | 'sale' | 'basePieces'> =>
+  sell.type === 'pieces'
+    ? { sale: 'pieces', basePieces: sell.pieces || 1, packs: [sell.pieces || 1, (sell.pieces || 1) * 2] }
+    : sell.type === 'small'
+      ? { baseWeight: 250, packs: [100, 250, 500] }
+      : { baseWeight: 1000, packs: [250, 500, 1000] };
+export const sellDefault = (section: 'sweets' | 'namkeens' | 'hot'): Sell =>
+  section === 'sweets' ? { type: 'large' } : section === 'namkeens' ? { type: 'small' } : { type: 'pieces', pieces: 2 };
+
+/* Owner text edits on a built-in item. Empty fields keep the original wording. */
+function applyEdits(p: Product, d: ProductData): Product {
+  const label = d.tag || p.special || p.tag;
+  return {
+    ...p,
+    name: d.name || p.name,
+    subtitle: d.subtitle || p.subtitle,
+    description: d.description || p.description,
+    allergens: d.allergens || p.allergens,
+    storage: d.storage || p.storage,
+    category: sectionOf(p) === 'sweets' && d.category && sweetCategories.includes(d.category) ? d.category : p.category,
+    image: d.image || p.image,
+    ...(d.tag !== undefined || d.special !== undefined
+      ? (d.special ? { special: label.toUpperCase(), tag: label } : { special: undefined, tag: label || p.tag })
+      : {}),
+  };
+}
+
+/* An item the owner added. */
+export function customProduct(r: ProductRecord): Product {
+  const d = r.data, section = d.section || 'sweets';
+  const subtitle = d.subtitle || 'Fresh from Mahima Sweets.';
+  const label = d.tag || (section === 'hot' ? 'Fresh & hot' : 'New at Mahima');
+  return {
+    id: r.id,
+    name: d.name || 'New item',
+    subtitle,
+    description: d.description || subtitle,
+    category: section === 'sweets' ? d.category || 'Traditional' : section === 'namkeens' ? 'Namkeens' : 'Hot & Crispy',
+    price: d.price || 1,
+    image: d.image || '/images/hero.webp',
+    tag: label,
+    special: d.special ? label.toUpperCase() : undefined,
+    allergens: d.allergens || DEFAULT_ALLERGENS,
+    storage: d.storage || DEFAULT_STORAGE,
+    hot: section === 'hot' || undefined,
+    custom: true,
+    ...sellPacks(d.sell || sellDefault(section)),
+  };
+}
+
+/* The full menu: built-in items with owner edits, then added items, with live stock and prices. Hidden items stay in the list (flagged) so bags can be checked. */
+export function buildCatalog(state: ShopState | null): Product[] {
+  const records = state?.products || [];
+  const byId = new Map(records.map(r => [r.id, r]));
+  const builtins = catalog.map(p => {
+    const r = byId.get(p.id);
+    return applyShopState(r ? { ...applyEdits(p, r.data), hidden: r.hidden } : p, state);
+  });
+  const added = records.filter(r => r.custom).map(r => applyShopState({ ...customProduct(r), hidden: r.hidden }, state));
+  return [...builtins, ...added];
+}
+
+/* The four items in "Our favourites": the owner's picks, topped up with the originals, skipping hidden items. */
+export function pickFavourites(list: Product[], state: ShopState | null): Product[] {
+  const visible = list.filter(p => !p.hidden);
+  const out: Product[] = [];
+  for (const id of [...(state?.favourites || []), ...defaultFavourites, ...visible.map(p => p.id)]) {
+    const p = visible.find(x => x.id === id);
+    if (p && !out.includes(p)) out.push(p);
+    if (out.length === 4) break;
+  }
+  return out;
+}

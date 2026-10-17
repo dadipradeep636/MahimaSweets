@@ -22,3 +22,13 @@ export const settings = sqliteTable('shop_settings', {
 export const adminSessions = sqliteTable('shop_admin_sessions', {
   tokenHash:text('token_hash').primaryKey(), expiresAt:integer('expires_at').notNull(),
 },t=>[index('admin_sessions_expiry').on(t.expiresAt)]);
+
+/* Product content edited from /admin: changes to built-in items, and items the owner adds. */
+export const productsTable = sqliteTable('shop_products', {
+  id:text('id').primaryKey(), custom:integer('custom').notNull().default(0), hidden:integer('hidden').notNull().default(0),
+  data:text('data').notNull(), imageId:text('image_id'), createdAt:integer('created_at').notNull(), updatedAt:integer('updated_at').notNull(),
+});
+/* Product photos uploaded from /admin (already cropped and resized in the browser), stored as base64. */
+export const images = sqliteTable('shop_images', {
+  id:text('id').primaryKey(), mime:text('mime').notNull(), data:text('data').notNull(), createdAt:integer('created_at').notNull(),
+},t=>[index('images_created').on(t.createdAt)]);

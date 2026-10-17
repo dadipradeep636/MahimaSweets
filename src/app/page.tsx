@@ -5,9 +5,10 @@ import BadamFeature from '@/components/BadamFeature';
 import ThemeToggle from '@/components/ThemeToggle';
 import AccountButton from '@/components/AccountButton';
 import HeroSweets from '@/components/HeroSweets';
+import { ProductCard, SteamWaves, type AddFn } from '@/components/ProductCard';
 import { shop, whatsappLink, shopDirectionsUrl, shopMapUrl, shopMapEmbedUrl } from '@/lib/shop';
 import { ArrowRight, ArrowUpRight, ShoppingBag, Plus, Minus, X, MapPin, Phone, Clock3, Leaf, Gift, Heart, Sparkles, Check, Trash2, Search, Menu, Package, Truck, ChevronDown, CheckCircle2, Eye, Flame, Store, Megaphone, Ban } from 'lucide-react';
-import { products as baseProducts, namkeens as baseNamkeens, hotItems as baseHotItems, catalog as baseCatalog, money, linePrice, defaultPack, packOptions, packLabel, priceFor, applyShopState, type Product, type CartItem, type ShopState } from '@/lib/products';
+import { money, linePrice, defaultPack, packOptions, packLabel, priceFor, buildCatalog, pickFavourites, sectionOf, type Product, type CartItem, type ShopState } from '@/lib/products';
 
 const categories = ['All sweets', 'Traditional', 'Dry fruit', 'Milk sweets', 'Syrupy'];
 const marqueeWords = ['Motichoor Ladoo', 'Kaju Burfi', 'Ghee Mysore Pak', 'Dharwad Peda', 'Gulab Jamun', 'Crispy Jalebi', 'Kesar Rasmalai', 'Badam Halwa', 'Crispy Murukku', 'Punjabi Samosa', 'Badam Geer', 'Poothrekulu'];
@@ -45,86 +46,12 @@ function Modal({ children, onClose, title, className = '' }: { children: React.R
   );
 }
 
-function SteamWaves() {
-  return (
-    <svg className="steam" viewBox="0 0 240 200" aria-hidden="true">
-      <path d="M65 185 C20 145 105 125 65 83 C28 42 80 20 63 -10" />
-      <path d="M125 195 C80 155 165 130 125 90 C88 48 140 25 123 -5" />
-      <path d="M185 185 C140 145 225 125 185 83 C148 42 200 20 183 -10" />
-    </svg>
-  );
-}
-
 function WhatsAppMark({ size = 24 }: { size?: number }) {
   return (
     <svg viewBox="0 0 32 32" width={size} height={size} fill="none" aria-hidden="true">
       <path d="M26 15.4a10.3 10.3 0 0 1-15.4 9L5 26l1.6-5.4A10.3 10.3 0 1 1 26 15.4Z" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" />
       <path d="m12 10 2 3-1.3 1.6c1 2 2.1 3.1 4.2 4l1.5-1.3 3 1.8c-.3 2-1.9 2.4-3.1 2.1-5-1.1-8.3-4.7-9.1-8.6-.2-1.1.6-2.5 2.8-2.6Z" fill="currentColor" />
     </svg>
-  );
-}
-
-type AddFn = (p: Product, size?: number, from?: HTMLElement) => void;
-
-function ProductCard({ product: p, index, open, add, className = '' }: { product: Product; index: number; open: (p: Product) => void; add: AddFn; className?: string }) {
-  const [pack, setPack] = useState(defaultPack(p));
-  const [added, setAdded] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  useEffect(() => () => clearTimeout(timer.current), []);
-  return (
-    <article className={`card ${p.hot ? 'is-hot' : ''} ${p.soldOut ? 'is-soldout' : ''} ${className}`} style={{ '--i': index } as React.CSSProperties}>
-      <button className="card-media" onClick={() => open(p)} aria-label={`View ${p.name} details`}>
-        <img src={p.image} alt={p.name} loading="lazy" />
-        {p.hot && <SteamWaves />}
-        {p.soldOut ? (
-          <span className="card-badge is-soldout-badge"><Ban size={12} /> Sold out today</span>
-        ) : (
-          <span className={`card-badge ${p.special ? 'is-special' : ''}`}>
-            {p.hot && <Flame size={12} />}
-            {p.special || p.tag}
-          </span>
-        )}
-        <span className="card-peek">
-          <Eye size={15} /> Quick look
-        </span>
-        <span className="card-shine" aria-hidden="true" />
-      </button>
-      <div className="card-body">
-        <button className="card-title" onClick={() => open(p)}>
-          <h3>{p.name}</h3>
-        </button>
-        <p className="card-sub">{p.subtitle}</p>
-        {packOptions(p).length > 1 && (
-          <div className="pack-chips" role="group" aria-label={`Choose pack for ${p.name}`}>
-            {packOptions(p).map(size => (
-              <button key={size} className={pack === size ? 'active' : ''} aria-pressed={pack === size} onClick={() => setPack(size)}>
-                {packLabel(p, size)}
-              </button>
-            ))}
-          </div>
-        )}
-        <div className="card-foot">
-          <div className="card-price">
-            <strong key={pack} className="price-pop">{money(priceFor(p, pack))}</strong>
-            <span>{packLabel(p, pack)}</span>
-          </div>
-          <button
-            className={`add-btn ${added ? 'is-added' : ''}`}
-            disabled={p.soldOut}
-            aria-label={p.soldOut ? `${p.name} is sold out today` : `Add ${packLabel(p, pack)} of ${p.name} to bag`}
-            onClick={e => {
-              add(p, pack, e.currentTarget);
-              setAdded(true);
-              clearTimeout(timer.current);
-              timer.current = setTimeout(() => setAdded(false), 1500);
-            }}
-          >
-            {p.soldOut ? <Ban size={16} /> : added ? <Check size={17} /> : <Plus size={17} />}
-            <span>{p.soldOut ? 'Sold out' : added ? 'Added' : 'Add'}</span>
-          </button>
-        </div>
-      </div>
-    </article>
   );
 }
 
@@ -195,21 +122,33 @@ export default function Home() {
     document.addEventListener('visibilitychange', onVisible);
     return () => { alive = false; clearInterval(timer); document.removeEventListener('visibilitychange', onVisible); };
   }, []);
-  const catalog = useMemo(() => baseCatalog.map(p => applyShopState(p, shopState)), [shopState]);
-  const byId = (id: string) => catalog.find(p => p.id === id)!;
-  const products = baseProducts.map(p => byId(p.id));
-  const namkeens = baseNamkeens.map(p => byId(p.id));
-  const hotItems = baseHotItems.map(p => byId(p.id));
-  const gift = byId('gift');
-  const badam = byId('badam-geer');
+  /* Full menu: built-in items with the owner's edits, plus items added at /admin. Hidden items stay in `catalog` for bag checks only. */
+  const catalog = useMemo(() => buildCatalog(shopState), [shopState]);
+  const byId = (id: string) => catalog.find(p => p.id === id);
+  const visible = catalog.filter(p => !p.hidden);
+  const products = visible.filter(p => sectionOf(p) === 'sweets');
+  const namkeens = visible.filter(p => sectionOf(p) === 'namkeens');
+  const hotItems = visible.filter(p => sectionOf(p) === 'hot');
+  const gift = visible.find(p => p.id === 'gift');
+  const badam = visible.find(p => p.id === 'badam-geer');
+  const favourites = pickFavourites(catalog, shopState);
+  const unavailable = (p?: Product) => !p || !!p.soldOut || !!p.hidden;
+
+  /* Once the live menu has loaded, drop bag lines for items that were deleted or whose pack size no longer exists. */
+  useEffect(() => {
+    if (!shopState) return;
+    setCart(items => {
+      const kept = items.filter(i => { const p = catalog.find(x => x.id === i.id); return p && packOptions(p).includes(i.grams); });
+      return kept.length === items.length ? items : kept;
+    });
+  }, [shopState, catalog]);
 
   useEffect(() => {
     try {
       const raw = JSON.parse(localStorage.getItem('mahima-cart-v1') || '[]');
       if (Array.isArray(raw))
         setCart(raw.filter((i: CartItem) => {
-          const p = i && baseCatalog.find(p => p.id === i.id);
-          return p && packOptions(p).includes(i.grams) && Number.isInteger(i.quantity) && i.quantity > 0 && i.quantity <= 20;
+          return i && typeof i.id === 'string' && /^[a-z0-9-]{1,60}$/.test(i.id) && Number.isInteger(i.grams) && i.grams > 0 && Number.isInteger(i.quantity) && i.quantity > 0 && i.quantity <= 20;
         }));
     } catch {}
     setReady(true);
@@ -261,15 +200,15 @@ export default function Home() {
     document.body.style.overflow = mobileNav ? 'hidden' : '';
   }, [mobileNav]);
 
-  const soldOutInBag = cart.filter(i => byId(i.id)?.soldOut);
+  const soldOutInBag = cart.filter(i => unavailable(byId(i.id)));
   const count = cart.reduce((s, i) => s + i.quantity, 0);
   const subtotal = cart.reduce((s, i) => s + linePrice(i, catalog) * i.quantity, 0);
   const delivery = fulfilment === 'delivery' && subtotal > 0 && subtotal < 999 ? 49 : 0;
-  const filtered = (query ? catalog.filter(p => p.id !== 'gift') : products).filter(
+  const filtered = (query ? visible.filter(p => p.id !== 'gift') : products).filter(
     p => (query || category === 'All sweets' || p.category === category) && `${p.name} ${p.subtitle} ${p.description}`.toLowerCase().includes(query.toLowerCase()),
   );
   const add: AddFn = (product, grams = defaultPack(product), from) => {
-    if (product.soldOut) {
+    if (product.soldOut || product.hidden) {
       setToast(`Sorry, ${product.name} is sold out today`);
       return;
     }
@@ -427,8 +366,8 @@ export default function Home() {
             <span className="ornament" aria-hidden="true"><i /><b>✦</b><i /></span>
           </div>
           <div className="bento reveal-grid">
-            {['poothrekulu', 'katli', 'dharwad', 'mysore'].map((id, index) => (
-              <ProductCard key={id} className={`spot spot-${index}`} product={catalog.find(p => p.id === id)!} index={index} open={openProduct} add={add} />
+            {favourites.map((p, index) => (
+              <ProductCard key={p.id} className={`spot spot-${index}`} product={p} index={index} open={openProduct} add={add} />
             ))}
           </div>
         </section>
@@ -530,8 +469,9 @@ export default function Home() {
           <p className="fine-print">Hot snacks are made through the day. Call to check what’s fresh right now.</p>
         </section>
 
-        <BadamFeature badam={badam} add={add} open={openProduct} />
+        {badam && <BadamFeature badam={badam} add={add} open={openProduct} />}
 
+        {gift && (
         <section id="gifting" className="section-pad gifting">
           <div className="gift-panel reveal">
             <svg className="rangoli" viewBox="0 0 400 400" aria-hidden="true">
@@ -591,6 +531,7 @@ export default function Home() {
             </div>
           </div>
         </section>
+        )}
 
         <section id="story" className="section-pad story">
           <div className="section-head center reveal">
@@ -764,8 +705,8 @@ export default function Home() {
               <strong key={weight} className="price-pop">{money(priceFor(current, weight))}</strong>
               <small>{packLabel(current, weight)}</small>
             </div>
-            <button className="button primary full glow" disabled={current.soldOut} onClick={e => { add(current, weight, e.currentTarget); setSelected(null); }}>
-              {current.soldOut ? <>Sold out today <Ban size={18} /></> : <>Add to bag <Plus size={18} /></>}
+            <button className="button primary full glow" disabled={unavailable(current)} onClick={e => { add(current, weight, e.currentTarget); setSelected(null); }}>
+              {unavailable(current) ? <>Sold out today <Ban size={18} /></> : <>Add to bag <Plus size={18} /></>}
             </button>
             <a className="product-whatsapp" href={whatsappLink(`Hi Mahima Sweets! Could you confirm availability and pricing for ${current.name}, ${packLabel(current, weight)}?`)} target="_blank" rel="noopener noreferrer">
               <WhatsAppMark size={18} /> Ask about this on WhatsApp <ArrowUpRight size={14} />
@@ -802,14 +743,15 @@ export default function Home() {
             <>
               <div className="cart-lines">
                 {cart.map(i => {
-                  const p = catalog.find(p => p.id === i.id)!;
+                  const p = catalog.find(p => p.id === i.id);
+                  if (!p) return null;
                   return (
-                    <div className={`cart-line ${p.soldOut ? 'is-soldout' : ''}`} key={`${i.id}-${i.grams}`}>
+                    <div className={`cart-line ${unavailable(p) ? 'is-soldout' : ''}`} key={`${i.id}-${i.grams}`}>
                       <img src={p.image} alt={p.name} />
                       <div className="line-info">
                         <h3>{p.name}</h3>
                         <p>{packLabel(p, i.grams)} · {money(linePrice(i, catalog))}</p>
-                        {p.soldOut && <span className="line-soldout"><Ban size={13} /> Sold out today – please remove</span>}
+                        {unavailable(p) && <span className="line-soldout"><Ban size={13} /> Sold out today – please remove</span>}
                         <div className="quantity">
                           <button aria-label={`Decrease ${p.name} quantity`} onClick={() => update(i.id, i.grams, -1)}><Minus size={13} /></button>
                           <span>{i.quantity}</span>
@@ -849,8 +791,8 @@ export default function Home() {
                   method: fulfilment,
                   subtotal,
                   delivery,
-                  lines: cart.map(i => {
-                    const p = catalog.find(p => p.id === i.id)!;
+                  lines: cart.filter(i => byId(i.id)).map(i => {
+                    const p = byId(i.id)!;
                     return `${p.name} — ${packLabel(p, i.grams)} × ${i.quantity}: ${money(linePrice(i, catalog) * i.quantity)}`;
                   }),
                 });
