@@ -31,7 +31,9 @@ export const badam: Product = {id:'badam-geer',name:'Badam Geer',subtitle:'Sip s
 export const catalog = [...products, ...namkeens, ...hotItems, badam, gift];
 export const money = (value: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value);
 export type CartItem = { id: string; grams: number; quantity: number };
-export const defaultPack = (p: Product) => p.id === 'gift' ? 1000 : p.sale === 'pairs' ? 1 : p.sale === 'pieces' ? p.basePieces || 1 : p.baseWeight || 500;
+export const defaultPack = (p: Product) => p.id === 'gift' ? 1000 : p.sale === 'pairs' ? 1 : p.sale === 'pieces' ? p.basePieces || 1 : p.baseWeight || 1000;
+/* Keep stored prices on their original basis; display and edit weight-based sweets per kilogram. */
+export const defaultPriceScale = (p: Product) => p.id === 'gift' || p.sale ? 1 : defaultPack(p) / (p.baseWeight || 500);
 export const packOptions = (p: Product) => p.id === 'gift' ? [1000] : p.packs || [250,500,1000];
 export const packLabel = (p: Product, size: number) => p.id === 'gift' ? '1 kg assorted box' : p.sale === 'pairs' ? `${size * 2} pieces` : p.sale === 'pieces' ? `${size} pieces` : p.unit === 'ml' ? `${size} ml` : size === 1000 ? '1 kg' : `${size} g`;
 export const priceFor = (p: Product, size: number) => Math.round(p.price * (p.id === 'gift' ? 1 : p.sale === 'pairs' ? size : p.sale === 'pieces' ? size / (p.basePieces || 1) : size / (p.baseWeight || 500)));

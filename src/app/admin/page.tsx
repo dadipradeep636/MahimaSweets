@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowUpRight, Check, Eye, EyeOff, LogOut, Lock, Megaphone, RotateCcw, Search, Sparkles, X } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
-import { products, namkeens, hotItems, badam, gift, money, defaultPack, packLabel, type Product } from '@/lib/products';
+import { products, namkeens, hotItems, badam, gift, money, defaultPack, defaultPriceScale, packLabel, type Product } from '@/lib/products';
 import './admin.css';
 
 type Item = { soldOut: boolean; price: number | null };
@@ -197,14 +197,15 @@ function Controls({ state, change, query, setQuery }: { state: State; change: (b
           </section>
         );
       })}
-      <p className="adm-foot adm-muted">Changes show on the website within a minute. Other pack sizes adjust automatically, for example 1 kg is twice the 500 g price.</p>
+      <p className="adm-foot adm-muted">Changes show on the website within a minute. Sweet rates are shown per 1 kg; 500 g is half that rate. Items sold by piece keep their piece prices.</p>
     </main>
   );
 }
 
 function ItemRow({ product: p, item, change, index }: { product: Product; item?: Item; change: (body: object, done: string) => Promise<boolean>; index: number }) {
   const soldOut = !!item?.soldOut;
-  const livePrice = item?.price ?? p.price;
+  const originalPrice = p.price * defaultPriceScale(p);
+  const livePrice = (item?.price ?? p.price) * defaultPriceScale(p);
   const [draft, setDraft] = useState(String(livePrice));
   const [saving, setSaving] = useState<'' | 'stock' | 'price'>('');
   useEffect(() => setDraft(String(livePrice)), [livePrice]);
@@ -215,7 +216,7 @@ function ItemRow({ product: p, item, change, index }: { product: Product; item?:
 
   async function savePrice(price: number | null) {
     setSaving('price');
-    await change({ action: 'setItem', id: p.id, price }, price === null ? `${p.name} back to ${money(p.price)}` : `${p.name} price saved: ${money(price)}`);
+    await change({ action: 'setItem', id: p.id, price, priceBasis: 'defaultPack' }, price === null ? `${p.name} back to ${money(originalPrice)}` : `${p.name} price saved: ${money(price)}`);
     setSaving('');
   }
 
@@ -245,7 +246,7 @@ function ItemRow({ product: p, item, change, index }: { product: Product; item?:
           )}
           {!dirty && changed && (
             <button type="button" className="adm-orig" onClick={() => savePrice(null)} title="Go back to the original price">
-              <RotateCcw size={13} /> Original {money(p.price)}
+              <RotateCcw size={13} /> Original {money(originalPrice)}
             </button>
           )}
         </form>

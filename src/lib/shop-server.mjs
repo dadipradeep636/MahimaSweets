@@ -65,7 +65,7 @@ export async function shopRequest(request, env) {
 }
 
 /* Owner: GET/POST /api/admin/ — ids is the list of real product ids the owner may edit. */
-export async function adminRequest(request, env, ids) {
+export async function adminRequest(request, env, ids, priceScales = {}) {
   const now = Math.floor(Date.now() / 1000), db = env.DB, pepper = env.ACCOUNT_PEPPER, password = env.ADMIN_PASSWORD;
   if (!db || !pepper || pepper.length < 32 || !password || password.length < 10) return json({ error: 'Shop controls are not set up yet. Add the ADMIN_PASSWORD secret in hosting settings.' }, 503);
   const signedIn = async () => {
@@ -112,8 +112,9 @@ export async function adminRequest(request, env, ids) {
       let soldOut = current ? current.sold_out : 0, price = current ? current.price : null;
       if ('soldOut' in body) { if (typeof body.soldOut !== 'boolean') return json({ error: 'Please check and try again.' }, 400); soldOut = body.soldOut ? 1 : 0; }
       if ('price' in body) {
+        if ('priceBasis' in body && body.priceBasis !== 'defaultPack') return json({ error: 'Unknown price unit.' }, 400);
         if (body.price === null) price = null;
-        else if (Number.isInteger(body.price) && body.price >= 1 && body.price <= PRICE_MAX) price = body.price;
+        else if (Number.isInteger(body.price) && body.price >= 1 && body.price <= PRICE_MAX) price = body.price / (body.priceBasis === 'defaultPack' ? priceScales[id] || 1 : 1);
         else return json({ error: `Enter a price between ₹1 and ₹${PRICE_MAX}.` }, 400);
       }
       await db.prepare('INSERT INTO shop_items (id,sold_out,price,updated_at) VALUES (?,?,?,?) ON CONFLICT(id) DO UPDATE SET sold_out=excluded.sold_out, price=excluded.price, updated_at=excluded.updated_at').bind(id, soldOut, price, now).run();

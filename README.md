@@ -104,7 +104,7 @@ Run `pnpm db:generate` after schema edits. Build once, then apply the new SQL lo
 The owner page at `/admin` lets the shop owner, from a phone:
 
 - switch any item between **Available** and **Sold out** (the website greys it out, shows "Sold out today" and disables Add; anyone with it already in their bag is asked to remove it before checkout),
-- **change prices** (the price is for the default pack shown next to it; other pack sizes scale automatically, e.g. 1 kg = 2 × the 500 g price; "Original ₹…" restores the built-in price),
+- **change prices** (the price is for the default pack shown next to it; weight-based sweet rates are shown and edited per 1 kg, with 500 g at half that rate; piece-based items retain their piece pricing; "Original ₹…" restores the built-in price),
 - show a **notice banner** at the top of the website (up to 160 characters, on/off),
 - **Mark everything available** in one go (tap twice to confirm).
 
