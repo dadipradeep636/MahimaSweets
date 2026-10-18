@@ -56,7 +56,7 @@ export const businessDefaults: Business = {
   legalName: 'Mahima Sweets', ownerName: '', fssai: '', email: '', grievanceName: '', grievancePhone: '', grievanceEmail: '',
   upiId: '', payeeName: 'Mahima Sweets', qrImageId: '', qrImage: '', advancePercent: 25, prepMinutes: 60,
 };
-export type HeroStyle = 'classic' | 'orbit' | 'rain' | 'diwali';
+export type HeroStyle = 'classic' | 'orbit' | 'rain' | 'diwali' | 'zerog';
 export type ShopState = {
   hero?: HeroStyle;
   items: Record<string, { soldOut: boolean; price: number | null }>;

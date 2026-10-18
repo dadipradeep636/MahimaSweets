@@ -78,7 +78,7 @@ export function parseBusiness(value) {
   return { ...out, qrImage: out.qrImageId ? imageUrl(out.qrImageId) : '' };
 }
 
-export const HERO_STYLES = ['classic', 'orbit', 'rain', 'diwali'];
+export const HERO_STYLES = ['classic', 'orbit', 'rain', 'diwali', 'zerog'];
 export const parseHero = value => (HERO_STYLES.includes(value) ? value : 'classic');
 
 export async function readState(db) {

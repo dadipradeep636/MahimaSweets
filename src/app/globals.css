@@ -246,6 +246,14 @@ button:disabled { cursor: not-allowed; opacity: 0.4; }
 @keyframes shaft { 50% { opacity: .45; } }
 [data-theme="light"] .h3-glow { background: radial-gradient(circle, rgba(255,190,100,.45), rgba(240,160,70,.16) 45%, transparent 70%); }
 
+/* Zero Gravity caption + hint */
+.h3-zerog canvas { -webkit-mask: radial-gradient(ellipse 50% 50% at 50% 50%, #000 72%, transparent 100%); mask: radial-gradient(ellipse 50% 50% at 50% 50%, #000 72%, transparent 100%); }
+.zg-label { position: absolute; left: 50%; bottom: -3%; z-index: 2; margin: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 2px; font-family: var(--serif, 'Playfair Display', serif); font-style: italic; font-size: clamp(20px, 2.2vw, 28px); white-space: nowrap; color: var(--gold-hi); text-shadow: 0 2px 18px rgba(0,0,0,.6); pointer-events: none; opacity: 0; animation: zgLabel 4.4s cubic-bezier(.2,.8,.2,1) both; }
+.zg-label span { font-family: var(--sans, 'DM Sans', sans-serif); font-style: normal; font-size: 11px; font-weight: 700; letter-spacing: .28em; text-transform: uppercase; color: var(--muted); }
+@keyframes zgLabel { 0% { opacity: 0; transform: translate(-50%, 14px); filter: blur(6px); } 14% { opacity: 1; transform: translate(-50%, 0); filter: blur(0); } 82% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -8px); filter: blur(4px); } }
+.zg-hint { position: absolute; right: 4%; top: 6%; z-index: 2; margin: 0; padding: 7px 14px; border-radius: 99px; border: 1px solid var(--line-strong); background: var(--glass); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); font-size: 13px; font-weight: 600; color: var(--gold-hi); pointer-events: none; animation: fadeUp .8s 3.2s both, bob2 3s 4s ease-in-out infinite; transition: opacity .5s; }
+.zg-hint.gone { opacity: 0 !important; }
+
 /* Diwali Glow (2.5D) */
 .hd { perspective: 1200px; }
 .hd-glow { position: absolute; inset: 4% 2% 0; border-radius: 50%; background: radial-gradient(ellipse at 50% 62%, rgba(255,170,70,.5), rgba(214,90,30,.18) 45%, transparent 70%); filter: blur(12px); animation: breathe 4.5s ease-in-out infinite; }

@@ -147,6 +147,7 @@ Note: UPI payments go straight to the shop's account, so the shop confirms each 
 
 `/admin → Shop details → Homepage animation` picks what greets customers at the top of the homepage:
 
+- **Zero Gravity** (true 3D) – each sweet is made of thousands of floating sugar pearls that break apart and re-form into the next (motichoor ladoo, poothrekulu, coconut burfi, rasmalai, Dharwad peda); pearls part around the mouse and scatter on a tap.
 - **Golden Orbit** (true 3D) – a festive thali in the centre with sweets orbiting it; tilts with the mouse.
 - **Sweet Rain** (true 3D) – sweets tumble in slow motion and settle on a brass plate, with falling silver varq.
 - **Diwali Glow** (2.5D) – the real platter photo on a rangoli, flickering diyas, marigold petals, steam.
@@ -154,5 +155,5 @@ Note: UPI payments go straight to the shop's account, so the shop confirms each 
 
 The 3D sweets are modelled in code with three.js (`src/components/hero/`), loaded only when a 3D style is chosen.
 Scenes pause when off-screen or in a background tab, use lighter models on phones, show a still frame for
-"reduce motion" users, and fall back to Classic if the device has no WebGL. `/?hero=orbit|rain|diwali|classic`
+"reduce motion" users, and fall back to Classic if the device has no WebGL. `/?hero=zerog|orbit|rain|diwali|classic`
 previews a style without saving it. The choice is stored in `shop_settings` (key `hero`) – no new migration.

@@ -5,12 +5,15 @@
 import * as THREE from 'three';
 import { makeRenderer, studio } from './sweets3d';
 
-export type SceneInput = { t: number; dt: number; px: number; py: number };
+/* px/py: smoothed tilt (-1..1). nx/ny: pointer position over the canvas in NDC; hover: a mouse is over it. */
+export type SceneInput = { t: number; dt: number; px: number; py: number; nx: number; ny: number; hover: boolean };
 export type SceneDef = {
   camera: THREE.PerspectiveCamera;
   update: (i: SceneInput) => void;
   /* time at which a still frame looks best (reduced motion) */
   stillAt: number;
+  /* click / tap on the scene (NDC) */
+  tap?: (nx: number, ny: number) => void;
 };
 export type SceneBuilder = (scene: THREE.Scene, renderer: THREE.WebGLRenderer) => SceneDef;
 
@@ -35,13 +38,22 @@ export function runScene(canvas: HTMLCanvasElement, build: SceneBuilder, opts: {
 
   // pointer tilt (desktop) – smoothed; gentle automatic sway on touch screens
   let tx = 0, ty = 0, px = 0, py = 0, touch = matchMedia('(hover: none)').matches;
+  let nx = 0, ny = 0, hover = false;
+  const ndc = (e: { clientX: number; clientY: number }) => {
+    const c = canvas.getBoundingClientRect();
+    return [((e.clientX - c.left) / c.width) * 2 - 1, -(((e.clientY - c.top) / c.height) * 2 - 1)] as const;
+  };
   const onMove = (e: PointerEvent) => {
     if (e.pointerType === 'touch') return;
+    [nx, ny] = ndc(e);
+    hover = Math.abs(nx) <= 1 && Math.abs(ny) <= 1;
     const r = host.getBoundingClientRect();
     tx = Math.max(-1, Math.min(1, ((e.clientX - r.left) / r.width - 0.5) * 2));
     ty = Math.max(-1, Math.min(1, ((e.clientY - r.top) / r.height - 0.5) * 2));
   };
-  const onLeave = () => { tx = 0; ty = 0; };
+  const onLeave = () => { tx = 0; ty = 0; hover = false; };
+  const onClick = (e: MouseEvent) => { const [x, y] = ndc(e); def.tap?.(x, y); };
+  if (def.tap) { canvas.addEventListener('click', onClick); canvas.style.cursor = 'pointer'; }
   window.addEventListener('pointermove', onMove, { passive: true });
   document.documentElement.addEventListener('pointerleave', onLeave);
 
@@ -56,7 +68,7 @@ export function runScene(canvas: HTMLCanvasElement, build: SceneBuilder, opts: {
     if (touch) { tx = Math.sin(t * 0.35) * 0.35; ty = Math.sin(t * 0.27) * 0.2; }
     px += (tx - px) * Math.min(1, dt * 3);
     py += (ty - py) * Math.min(1, dt * 3);
-    def.update({ t, dt, px, py });
+    def.update({ t, dt, px, py, nx, ny, hover });
     renderer.render(scene, def.camera);
     raf = visible && onScreen ? requestAnimationFrame(frame) : 0;
   };
@@ -72,8 +84,8 @@ export function runScene(canvas: HTMLCanvasElement, build: SceneBuilder, opts: {
   if (fixed !== undefined) {
     // jump straight to a good-looking moment and draw once
     const step = 1 / 30;
-    for (let s = 0; s < fixed; s += step) def.update({ t: s, dt: step, px: 0, py: 0 });
-    def.update({ t: fixed, dt: step, px: 0, py: 0 });
+    for (let s = 0; s < fixed; s += step) def.update({ t: s, dt: step, px: 0, py: 0, nx: 0, ny: 0, hover: false });
+    def.update({ t: fixed, dt: step, px: 0, py: 0, nx: 0, ny: 0, hover: false });
     renderer.render(scene, def.camera);
     ro.disconnect();
     ro = new ResizeObserver(() => { size(); renderer.render(scene, def.camera); });
@@ -88,6 +100,7 @@ export function runScene(canvas: HTMLCanvasElement, build: SceneBuilder, opts: {
     cancelAnimationFrame(raf);
     ro.disconnect(); io.disconnect();
     window.removeEventListener('pointermove', onMove);
+    canvas.removeEventListener('click', onClick);
     document.documentElement.removeEventListener('pointerleave', onLeave);
     document.removeEventListener('visibilitychange', onVis);
     scene.traverse(o => { if ((o as THREE.Mesh).geometry) (o as THREE.Mesh).geometry.dispose(); });

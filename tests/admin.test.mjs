@@ -203,7 +203,7 @@ test('owner switches the homepage animation; only known styles are accepted', as
   assert.equal((await shop()).hero, 'classic');
   assert.equal((await admin({ action: 'setHero', hero: 'orbit' })).status, 401);
   const c = cookieOf(await admin({ action: 'login', password: PASSWORD }));
-  for (const hero of ['orbit', 'rain', 'diwali', 'classic']) {
+  for (const hero of ['orbit', 'rain', 'diwali', 'zerog', 'classic']) {
     assert.equal((await admin({ action: 'setHero', hero }, c)).status, 200);
     assert.equal((await shop()).hero, hero);
   }

@@ -7,7 +7,7 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 
 /* ---------- small helpers ---------- */
 /* phones get lighter models */
-const LOW = typeof window !== 'undefined' && (matchMedia('(max-width: 760px)').matches || (navigator.hardwareConcurrency || 8) <= 4);
+export const LOW = typeof window !== 'undefined' && (matchMedia('(max-width: 760px)').matches || (navigator.hardwareConcurrency || 8) <= 4);
 
 export function rng(seed = 1) {
   let s = seed >>> 0 || 1;
