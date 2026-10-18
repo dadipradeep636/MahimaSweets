@@ -4,10 +4,12 @@ import { useEffect, useRef, useState } from 'react';
 import { BadgeCheck, Building2, Camera, Check, IndianRupee, QrCode, ShieldAlert, Trash2, UserRound } from 'lucide-react';
 import { businessDefaults, money, type Business } from '@/lib/products';
 import { preparePhoto, uploadPhoto } from '@/lib/photo';
+import HeroPicker from './HeroPicker';
+import type { HeroStyle } from '@/lib/products';
 
 type Change = (body: object, done: string) => Promise<unknown>;
 
-export default function ShopDetails({ business, change, flash }: { business?: Business; change: Change; flash: (t: string, bad?: boolean) => void }) {
+export default function ShopDetails({ business, hero, change, flash }: { business?: Business; hero?: HeroStyle; change: Change; flash: (t: string, bad?: boolean) => void }) {
   const saved = { ...businessDefaults, ...(business || {}) };
   const [f, setF] = useState<Business>(saved);
   const [saving, setSaving] = useState(false);
@@ -110,6 +112,7 @@ export default function ShopDetails({ business, change, flash }: { business?: Bu
           {saving ? 'Saving…' : <><Check size={18} /> Save shop details</>}
         </button>
       </div>
+      <HeroPicker hero={hero} change={change} />
     </section>
   );
 }

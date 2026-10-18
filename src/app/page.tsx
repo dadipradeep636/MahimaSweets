@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import BadamFeature from '@/components/BadamFeature';
 import ThemeToggle from '@/components/ThemeToggle';
 import AccountButton from '@/components/AccountButton';
-import HeroSweets from '@/components/HeroSweets';
+import HeroStage from '@/components/hero/HeroStage';
 import { ProductCard, SteamWaves, type AddFn } from '@/components/ProductCard';
 import Checkout from '@/components/Checkout';
 import OrderTracker from '@/components/OrderTracker';
@@ -351,7 +351,7 @@ export default function Home() {
               <li><Gift size={15} /> Gift boxes</li>
             </ul>
           </div>
-          <HeroSweets />
+          <HeroStage style={shopState?.hero} />
           <a className="scroll-cue" href="#favourites" aria-label="Scroll to our specials">
             <span />
           </a>

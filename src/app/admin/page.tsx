@@ -172,7 +172,7 @@ function Dashboard({ state, change, flash, onSignedOut }: { state: State; change
         <OrdersPanel flash={flash} onCount={setPending} onSignedOut={onSignedOut} />
       </div>
       {view === 'menu' && <Controls state={state} change={change} flash={flash} />}
-      {view === 'shop' && <main className="adm-main"><ShopDetails business={state.business} change={change} flash={flash} /></main>}
+      {view === 'shop' && <main className="adm-main"><ShopDetails business={state.business} hero={state.hero} change={change} flash={flash} /></main>}
     </>
   );
 }

@@ -39,7 +39,7 @@ const cookieOf = r => r.headers.get('set-cookie').split(';')[0];
 
 test('owner signs in, marks sold out, changes price, sets notice; shop sees it', async () => {
   const { db, admin, shop } = fixture();
-  assert.deepEqual(await shop(), { items: {}, notice: null, products: [], favourites: null, business: parseBusiness(null) });
+  assert.deepEqual(await shop(), { items: {}, notice: null, products: [], favourites: null, business: parseBusiness(null), hero: 'classic' });
   assert.deepEqual(await (await admin()).json(), { admin: false });
   const login = await admin({ action: 'login', password: PASSWORD });
   assert.equal(login.status, 200);
@@ -56,6 +56,7 @@ test('owner signs in, marks sold out, changes price, sets notice; shop sees it',
     products: [],
     favourites: null,
     business: parseBusiness(null),
+    hero: 'classic',
   });
   // Changing price keeps sold-out state, and reset brings everything back.
   await admin({ action: 'setItem', id: 'ladoo', price: 260 }, c);
@@ -101,7 +102,7 @@ test('controls stay locked when no owner password is configured', async () => {
   const { db, admin, shop, upload } = fixture({ ADMIN_PASSWORD: '' });
   assert.equal((await admin({ action: 'login', password: '' })).status, 503);
   assert.equal((await upload(WEBP)).status, 503);
-  assert.deepEqual(await shop(), { items: {}, notice: null, products: [], favourites: null, business: parseBusiness(null) });
+  assert.deepEqual(await shop(), { items: {}, notice: null, products: [], favourites: null, business: parseBusiness(null), hero: 'classic' });
   db.close();
 });
 
@@ -194,5 +195,19 @@ test('owner edits a built-in item, changes its photo and price, then undoes ever
   await admin({ action: 'setHidden', id: 'jamun', hidden: false }, c);
   assert.equal((await shop()).products.find(p => p.id === 'jamun').hidden, false);
   assert.equal((await admin({ action: 'resetProduct', id: 'c-made-up' }, c)).status, 400);
+  db.close();
+});
+
+test('owner switches the homepage animation; only known styles are accepted', async () => {
+  const { db, admin, shop } = fixture();
+  assert.equal((await shop()).hero, 'classic');
+  assert.equal((await admin({ action: 'setHero', hero: 'orbit' })).status, 401);
+  const c = cookieOf(await admin({ action: 'login', password: PASSWORD }));
+  for (const hero of ['orbit', 'rain', 'diwali', 'classic']) {
+    assert.equal((await admin({ action: 'setHero', hero }, c)).status, 200);
+    assert.equal((await shop()).hero, hero);
+  }
+  for (const hero of ['', 'fireworks', null, 7, '<script>']) assert.equal((await admin({ action: 'setHero', hero }, c)).status, 400);
+  assert.equal((await shop()).hero, 'classic');
   db.close();
 });

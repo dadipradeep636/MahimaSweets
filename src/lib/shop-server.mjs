@@ -78,13 +78,17 @@ export function parseBusiness(value) {
   return { ...out, qrImage: out.qrImageId ? imageUrl(out.qrImageId) : '' };
 }
 
+export const HERO_STYLES = ['classic', 'orbit', 'rain', 'diwali'];
+export const parseHero = value => (HERO_STYLES.includes(value) ? value : 'classic');
+
 export async function readState(db) {
-  const [rows, notice, products, favourites, business] = await Promise.all([
+  const [rows, notice, products, favourites, business, hero] = await Promise.all([
     db.prepare('SELECT id, sold_out, price FROM shop_items').all(),
     db.prepare("SELECT value FROM shop_settings WHERE key='notice'").first(),
     db.prepare('SELECT id, custom, hidden, data, image_id FROM shop_products ORDER BY created_at, id').all(),
     db.prepare("SELECT value FROM shop_settings WHERE key='favourites'").first(),
     db.prepare("SELECT value FROM shop_settings WHERE key='business'").first().catch(() => null),
+    db.prepare("SELECT value FROM shop_settings WHERE key='hero'").first().catch(() => null),
   ]);
   const items = {};
   for (const r of rows.results || []) items[r.id] = { soldOut: !!r.sold_out, price: r.price ?? null };
@@ -98,17 +102,17 @@ export async function readState(db) {
   }
   let favs = null;
   try { if (favourites) favs = JSON.parse(favourites.value); } catch {}
-  return { items, notice: { text: String(parsed.text || '').slice(0, NOTICE_MAX), active: !!parsed.active }, products: list, favourites: Array.isArray(favs) ? favs : null, business: parseBusiness(business?.value) };
+  return { items, notice: { text: String(parsed.text || '').slice(0, NOTICE_MAX), active: !!parsed.active }, products: list, favourites: Array.isArray(favs) ? favs : null, business: parseBusiness(business?.value), hero: parseHero(hero?.value) };
 }
 
 /* Public: GET /api/shop/ */
 export async function shopRequest(request, env) {
-  const empty = { items: {}, notice: null, products: [], favourites: null, business: parseBusiness(null) };
+  const empty = { items: {}, notice: null, products: [], favourites: null, business: parseBusiness(null), hero: 'classic' };
   if (request.method !== 'GET') return json({ error: 'Method not allowed.' }, 405, { Allow: 'GET' });
   if (!env.DB) return json(empty);
   try {
-    const { items, notice, products, favourites, business } = await readState(env.DB);
-    return json({ items, notice: notice.active && notice.text ? { text: notice.text } : null, products, favourites, business }, 200, { 'Cache-Control': 'public, max-age=0, must-revalidate' });
+    const { items, notice, products, favourites, business, hero } = await readState(env.DB);
+    return json({ items, notice: notice.active && notice.text ? { text: notice.text } : null, products, favourites, business, hero }, 200, { 'Cache-Control': 'public, max-age=0, must-revalidate' });
   } catch {
     // If the tables are not ready yet, the shop simply shows the built-in menu, all available.
     return json(empty);
@@ -358,6 +362,12 @@ export async function adminRequest(request, env, info = {}, legacyScales) {
       if (!Array.isArray(list) || list.length < 1 || list.length > 4 || new Set(list).size !== list.length) return json({ error: 'Choose up to four different items.' }, 400);
       for (const id of list) if (!(await known(id))) return json({ error: 'Unknown item.' }, 400);
       await db.prepare("INSERT INTO shop_settings (key,value,updated_at) VALUES ('favourites',?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at").bind(JSON.stringify(list), now).run();
+      return state();
+    }
+
+    if (action === 'setHero') {
+      if (!HERO_STYLES.includes(body.hero)) return json({ error: 'Choose one of the homepage animations.' }, 400);
+      await db.prepare("INSERT INTO shop_settings (key,value,updated_at) VALUES ('hero',?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at").bind(body.hero, now).run();
       return state();
     }
 

@@ -142,3 +142,17 @@ Online checkout now places **real store-pickup orders** (home delivery is shown 
 **Code:** `src/lib/orders-server.mjs` (order rules; totals are always recalculated on the server via `src/lib/price-cart.ts`), `src/lib/pickup.mjs` (slot rules shared by browser and server), `src/components/Checkout.tsx`, `src/components/OrderTracker.tsx`, `src/app/admin/OrdersPanel.tsx`, `src/app/admin/ShopDetails.tsx`, `src/components/LegalPage.tsx`. Table `shop_orders` from `drizzle/0003_pickup_orders.sql`. Tests: `tests/orders.test.mjs`.
 
 Note: UPI payments go straight to the shop's account, so the shop confirms each payment by matching the amount and UPI reference in its bank/UPI business app. Automatic confirmation would need a payment gateway (e.g. Razorpay, Cashfree), which can be added later.
+
+## Homepage animation (owner can switch)
+
+`/admin → Shop details → Homepage animation` picks what greets customers at the top of the homepage:
+
+- **Golden Orbit** (true 3D) – a festive thali in the centre with sweets orbiting it; tilts with the mouse.
+- **Sweet Rain** (true 3D) – sweets tumble in slow motion and settle on a brass plate, with falling silver varq.
+- **Diwali Glow** (2.5D) – the real platter photo on a rangoli, flickering diyas, marigold petals, steam.
+- **Classic** – the original floating platter.
+
+The 3D sweets are modelled in code with three.js (`src/components/hero/`), loaded only when a 3D style is chosen.
+Scenes pause when off-screen or in a background tab, use lighter models on phones, show a still frame for
+"reduce motion" users, and fall back to Classic if the device has no WebGL. `/?hero=orbit|rain|diwali|classic`
+previews a style without saving it. The choice is stored in `shop_settings` (key `hero`) – no new migration.
