@@ -14,6 +14,8 @@ export type SceneDef = {
   stillAt: number;
   /* click / tap on the scene (NDC) */
   tap?: (nx: number, ny: number) => void;
+  /* resolves when the scene's assets (e.g. photos) are loaded */
+  ready?: Promise<unknown>;
 };
 export type SceneBuilder = (scene: THREE.Scene, renderer: THREE.WebGLRenderer) => SceneDef;
 
@@ -57,7 +59,7 @@ export function runScene(canvas: HTMLCanvasElement, build: SceneBuilder, opts: {
   window.addEventListener('pointermove', onMove, { passive: true });
   document.documentElement.addEventListener('pointerleave', onLeave);
 
-  let visible = true, onScreen = true, raf = 0, last = performance.now(), t = 0, alive = true;
+  let started = false, visible = true, onScreen = true, raf = 0, last = performance.now(), t = 0, alive = true;
   const fixed = opts.freezeAt ?? (opts.still ? def.stillAt : undefined);
 
   const frame = (now: number) => {
@@ -73,7 +75,7 @@ export function runScene(canvas: HTMLCanvasElement, build: SceneBuilder, opts: {
     raf = visible && onScreen ? requestAnimationFrame(frame) : 0;
   };
   const resume = () => {
-    if (!raf && visible && onScreen && fixed === undefined && alive) { last = performance.now(); raf = requestAnimationFrame(frame); }
+    if (started && !raf && visible && onScreen && fixed === undefined && alive) { last = performance.now(); raf = requestAnimationFrame(frame); }
   };
 
   const io = new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; resume(); }, { rootMargin: '80px' });
@@ -81,19 +83,25 @@ export function runScene(canvas: HTMLCanvasElement, build: SceneBuilder, opts: {
   const onVis = () => { visible = document.visibilityState === 'visible'; resume(); };
   document.addEventListener('visibilitychange', onVis);
 
-  if (fixed !== undefined) {
-    // jump straight to a good-looking moment and draw once
-    const step = 1 / 30;
-    for (let s = 0; s < fixed; s += step) def.update({ t: s, dt: step, px: 0, py: 0, nx: 0, ny: 0, hover: false });
-    def.update({ t: fixed, dt: step, px: 0, py: 0, nx: 0, ny: 0, hover: false });
-    renderer.render(scene, def.camera);
-    ro.disconnect();
-    ro = new ResizeObserver(() => { size(); renderer.render(scene, def.camera); });
-    ro.observe(host);
-  } else {
-    raf = requestAnimationFrame(frame);
-  }
-  requestAnimationFrame(() => opts.onReady?.());
+  const start = () => {
+    if (!alive) return;
+    started = true;
+    last = performance.now();
+    if (fixed !== undefined) {
+      // jump straight to a good-looking moment and draw once
+      const step = 1 / 30;
+      for (let s = 0; s < fixed; s += step) def.update({ t: s, dt: step, px: 0, py: 0, nx: 0, ny: 0, hover: false });
+      def.update({ t: fixed, dt: step, px: 0, py: 0, nx: 0, ny: 0, hover: false });
+      renderer.render(scene, def.camera);
+      ro.disconnect();
+      ro = new ResizeObserver(() => { size(); renderer.render(scene, def.camera); });
+      ro.observe(host);
+    } else {
+      raf = requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(() => opts.onReady?.());
+  };
+  (def.ready ?? Promise.resolve()).then(start, start);
 
   return () => {
     alive = false;

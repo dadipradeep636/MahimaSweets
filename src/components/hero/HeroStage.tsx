@@ -58,7 +58,7 @@ function Hero3D({ kind, onFail }: { kind: Kind3D; onFail: () => void }) {
     <div className={`hero-visual h3 h3-${kind}${ready ? ' is-ready' : ''}`}>
       <div className="h3-glow" aria-hidden="true" />
       {kind === 'rain' && <div className="h3-shafts" aria-hidden="true"><i /><i /><i /></div>}
-      <canvas ref={canvas} role="img" aria-label={kind === 'zerog' ? 'Floating sweets made of sugar pearls – motichoor ladoo, poothrekulu, coconut burfi, rasmalai and Dharwad peda' : 'Animated festive sweets – ladoo, kaju katli, jalebi, gulab jamun, peda and Mysore pak'} />
+      <canvas ref={canvas} role="img" aria-label={kind === 'zerog' ? 'Floating sweets – motichoor ladoo, poothrekulu, rasmalai, jalebi, coconut burfi and Dharwad peda' : 'Animated festive sweets – ladoo, kaju katli, jalebi, gulab jamun, peda and Mysore pak'} />
       {kind === 'zerog' && (
         <>
           {label?.name && <p key={label.n} className="zg-label" style={{ animationDelay: `${label.delay}s` } as React.CSSProperties}><span>Now floating</span>{label.name}</p>}
