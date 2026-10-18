@@ -336,7 +336,7 @@ export default function Home() {
                 <em className="w shimmer" style={{ '--w': 2 } as React.CSSProperties}>We get you.</em>
               </span>
             </h1>
-            <p className="hero-description">Melt-in-your-mouth mithai, can’t-stop crunchy namkeens, and hot snacks that steal the chai-time spotlight.</p>
+            <p className="hero-description">Melt-in-your-mouth mithai, can’t-stop crunchy namkeens, and hot snacks that steal the spotlight.</p>
             <div className="hero-buttons">
               <a className="button primary glow" href="#collection">
                 Shop sweets <ArrowRight size={18} />
@@ -450,7 +450,7 @@ export default function Home() {
                 A little salty. <em>A lot of personality.</em>
               </h2>
             </div>
-            <p className="lead">Chai’s best friends. Movie-night essentials. Your “just one handful” favourites.</p>
+            <p className="lead">Snack-time favourites. Movie-night essentials. Your “just one handful” favourites.</p>
           </div>
           <div className="grid reveal-grid">
             {namkeens.map((p, index) => (
@@ -468,13 +468,13 @@ export default function Home() {
           <div className="section-head split reveal">
             <div>
               <p className="eyebrow">
-                <Flame size={13} /> THE CHAI-TIME TAKEOVER
+                <Flame size={13} /> THE HOT SNACK TAKEOVER
               </p>
               <h2>
                 Hot bites. <em>Zero small talk.</em>
               </h2>
             </div>
-            <p className="lead">That first crunch says it all. Meet the golden duo your chai deserves.</p>
+            <p className="lead">That first crunch says it all. Meet the golden duo your evenings deserve.</p>
           </div>
           <div className="grid hot-grid reveal-grid">
             {hotItems.map((p, index) => (
