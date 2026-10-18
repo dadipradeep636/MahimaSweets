@@ -601,7 +601,7 @@ export default function Home() {
             <div className="visit-copy">
               <p className="eyebrow">COME SAY HELLO</p>
               <h2>
-                Chai plans? <em>Make us the stop.</em>
+                Craving mithai? <em>Make us the stop.</em>
               </h2>
               <div className="contact-list">
                 <div className="contact-row">
