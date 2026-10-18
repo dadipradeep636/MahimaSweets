@@ -6,18 +6,23 @@ import ThemeToggle from '@/components/ThemeToggle';
 import AccountButton from '@/components/AccountButton';
 import HeroSweets from '@/components/HeroSweets';
 import { ProductCard, SteamWaves, type AddFn } from '@/components/ProductCard';
+import Checkout from '@/components/Checkout';
+import OrderTracker from '@/components/OrderTracker';
+import { readMyOrders, saveMyOrder, type MyOrder, type OrderView } from '@/lib/my-orders';
 import { shop, whatsappLink, shopDirectionsUrl, shopMapUrl, shopMapEmbedUrl } from '@/lib/shop';
-import { ArrowRight, ArrowUpRight, ShoppingBag, Plus, Minus, X, MapPin, Phone, Clock3, Leaf, Gift, Heart, Sparkles, Check, Trash2, Search, Menu, Package, Truck, ChevronDown, CheckCircle2, Eye, Flame, Store, Megaphone, Ban } from 'lucide-react';
-import { money, linePrice, defaultPack, packOptions, packLabel, priceFor, buildCatalog, pickFavourites, sectionOf, type Product, type CartItem, type ShopState } from '@/lib/products';
+import { ArrowRight, ArrowUpRight, ShoppingBag, Plus, Minus, X, MapPin, Phone, Clock3, Leaf, Gift, Heart, Sparkles, Check, Trash2, Search, Menu, Package, Truck, ChevronDown, CheckCircle2, Eye, Flame, Store, Megaphone, Ban, Receipt } from 'lucide-react';
+import { money, linePrice, defaultPack, packOptions, packLabel, priceFor, buildCatalog, pickFavourites, sectionOf, businessDefaults, type Product, type CartItem, type ShopState } from '@/lib/products';
 
 const categories = ['All sweets', 'Traditional', 'Dry fruit', 'Milk sweets', 'Syrupy'];
 const marqueeWords = ['Motichoor Ladoo', 'Kaju Burfi', 'Ghee Mysore Pak', 'Dharwad Peda', 'Gulab Jamun', 'Crispy Jalebi', 'Kesar Rasmalai', 'Badam Halwa', 'Crispy Murukku', 'Punjabi Samosa', 'Badam Geer', 'Poothrekulu'];
 const faqs = [
   ['Can I choose different pack sizes?', 'Yes. Sweets come in 250 g, 500 g and 1 kg packs. Namkeens come in 100 g, 250 g and 500 g. Samosas come in packs of 2, 4 or 6 pieces, and pakodi in 100 g, 250 g and 500 g. Badam Geer comes in 250 ml and 500 ml. The celebration box is a fixed 1 kg assortment. Prices shown are samples.'],
-  ['Can I mix sweets, namkeens and hot snacks?', 'Absolutely. Add anything you like to one bag. The preview shows store pickup, or local delivery at ₹49 (free from ₹999). Please confirm hot-snack availability and timings with the shop.'],
-  ['Can I add a gift message?', 'Yes. Add a celebration box, then write a personal note at checkout. The note appears on your receipt.'],
+  ['How does ordering work?', 'Add items to your bag, choose a pickup time, and pay at least 25% by UPI (or the full amount). Send us the UPI reference number, we confirm your payment, and you pay the rest when you pick up at the shop. Your order page shows every step.'],
+  ['Can I mix sweets, namkeens and hot snacks?', 'Absolutely. Add anything you like to one bag. Hot snacks are made through the day, so we may call you if a fresh batch needs a little extra time.'],
+  ['Can I add a gift message?', 'Yes. Write a personal note at checkout and we will add it to your order.'],
   ['What about allergies and storage?', 'Open any product to see ingredient and storage notes. Sweets can contain milk, nuts and wheat, and shared preparation may cause cross-contact. Please confirm ingredients and shelf life with the shop.'],
-  ['Does online checkout place a real order?', 'Not yet. Online checkout is a preview: no payment is taken and no order is sent to the shop. To order today, call us or message us on WhatsApp.'],
+  ['Can I cancel my order?', 'Yes, within 30 minutes of placing it, using the Cancel button on your order page. Any payment is refunded to the same UPI account within 5–7 working days. After 30 minutes, please call the shop.'],
+  ['Do you deliver?', 'Home delivery in Gangavathi is coming soon. For now, all online orders are store pickup, opposite Amar Hospitals.'],
 ];
 
 function Modal({ children, onClose, title, className = '' }: { children: React.ReactNode; onClose: () => void; title: string; className?: string }) {
@@ -102,10 +107,8 @@ export default function Home() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
   const [toast, setToast] = useState('');
-  const [fulfilment, setFulfilment] = useState('pickup');
-  const [order, setOrder] = useState<{ id: string; total: number; method: string; lines: string[]; subtotal: number; delivery: number } | null>(null);
-  const [policy, setPolicy] = useState<string | null>(null);
-  const [giftNote, setGiftNote] = useState('');
+  const [tracking, setTracking] = useState<{ id: string; t: string; initial?: OrderView } | null>(null);
+  const [myOrder, setMyOrder] = useState<(MyOrder & { status?: string }) | null>(null);
   const [shopState, setShopState] = useState<ShopState | null>(null);
 
   /* Live stock, prices and notice set by the owner at /admin. Refreshes every minute and when the tab comes back into view. */
@@ -132,6 +135,18 @@ export default function Home() {
   const gift = visible.find(p => p.id === 'gift');
   const badam = visible.find(p => p.id === 'badam-geer');
   const favourites = pickFavourites(catalog, shopState);
+
+  /* "Your order" button: the latest order placed from this phone that is still open. */
+  useEffect(() => {
+    let alive = true;
+    const latest = readMyOrders()[0];
+    if (!latest) { setMyOrder(null); return; }
+    fetch(`/api/order/?id=${latest.id}&t=${latest.t}`, { cache: 'no-store' })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (alive) setMyOrder(d?.order && !['picked_up', 'cancelled'].includes(d.order.status) ? { ...latest, status: d.order.status } : null); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [tracking]);
   const unavailable = (p?: Product) => !p || !!p.soldOut || !!p.hidden;
 
   /* Once the live menu has loaded, drop bag lines for items that were deleted or whose pack size no longer exists. */
@@ -203,7 +218,7 @@ export default function Home() {
   const soldOutInBag = cart.filter(i => unavailable(byId(i.id)));
   const count = cart.reduce((s, i) => s + i.quantity, 0);
   const subtotal = cart.reduce((s, i) => s + linePrice(i, catalog) * i.quantity, 0);
-  const delivery = fulfilment === 'delivery' && subtotal > 0 && subtotal < 999 ? 49 : 0;
+  const business = shopState?.business || businessDefaults;
   const filtered = (query ? visible.filter(p => p.id !== 'gift') : products).filter(
     p => (query || category === 'All sweets' || p.category === category) && `${p.name} ${p.subtitle} ${p.description}`.toLowerCase().includes(query.toLowerCase()),
   );
@@ -332,7 +347,7 @@ export default function Home() {
             </div>
             <ul className="hero-chips">
               <li><Store size={15} /> Store pickup</li>
-              <li><Truck size={15} /> Local delivery</li>
+              <li><Truck size={15} /> Delivery coming soon</li>
               <li><Gift size={15} /> Gift boxes</li>
             </ul>
           </div>
@@ -655,15 +670,26 @@ export default function Home() {
           </div>
         </div>
         <div className="footer-bottom">
-          <span>© {new Date().getFullYear()} Mahima Sweets · Gangavathi, Karnataka</span>
+          <div className="footer-legal">
+            <span>© {new Date().getFullYear()} {business.legalName || 'Mahima Sweets'} · Opposite Amar Hospitals, Gangavathi, Karnataka – 583227</span>
+            {business.fssai && <span className="fssai-line"><b>FSSAI</b> Lic. No. {business.fssai}</span>}
+          </div>
           <div>
-            <button onClick={() => setPolicy('Privacy')}>Privacy</button>
-            <button onClick={() => setPolicy('Ordering & returns')}>Ordering &amp; returns</button>
-            <span>Online checkout is a preview · call or WhatsApp to order</span>
+            <a href="/privacy/">Privacy Policy</a>
+            <a href="/terms/">Terms</a>
+            <a href="/refund-policy/">Refund &amp; Cancellation</a>
+            <a href="/privacy/#grievance">Grievance officer</a>
           </div>
         </div>
       </footer>
 
+      {myOrder && !tracking && (
+        <button className="order-pill" onClick={() => setTracking({ id: myOrder.id, t: myOrder.t })}>
+          <span className="order-pill-dot" />
+          <Receipt size={16} />
+          <span>Your order {myOrder.id}<small>{({ awaiting_payment: 'Waiting for payment', payment_check: 'Checking payment', confirmed: 'Being prepared', ready: 'Ready for pickup!' } as Record<string, string>)[myOrder.status || ''] || 'Track'}</small></span>
+        </button>
+      )}
       <a className="whatsapp-float" href={whatsappLink()} target="_blank" rel="noopener noreferrer" aria-label="Chat with Mahima Sweets on WhatsApp">
         <span className="whatsapp-float-label">Let’s talk sweets</span>
         <span className="whatsapp-float-icon"><WhatsAppMark size={26} /></span>
@@ -726,9 +752,9 @@ export default function Home() {
       {cartOpen && (
         <Modal title={checkout ? 'Checkout' : 'Your shopping bag'} onClose={closeCart} className="cart-modal">
           <div className="cart-heading">
-            <p className="eyebrow">{checkout ? 'ALMOST THERE' : 'YOUR BAG'}</p>
+            <p className="eyebrow">{checkout ? 'STORE PICKUP' : 'YOUR BAG'}</p>
             <h2>{checkout ? 'The final sweet step.' : 'Your craving collection.'}</h2>
-            <p>{checkout ? 'Review your order. This is a preview: no payment is taken and no order is sent.' : `${count} ${count === 1 ? 'item' : 'items'} ready to sweeten your day.`}</p>
+            <p>{checkout ? 'Choose a pickup time and pay a small advance by UPI.' : `${count} ${count === 1 ? 'item' : 'items'} ready to sweeten your day.`}</p>
           </div>
           {!cart.length ? (
             <div className="empty-cart">
@@ -771,7 +797,7 @@ export default function Home() {
                   <span>Subtotal</span>
                   <strong>{money(subtotal)}</strong>
                 </div>
-                <p>Delivery is worked out at checkout. Free delivery from ₹999.</p>
+                <p>Store pickup from our shop. Pay {business.advancePercent}% now by UPI, the rest at pickup. Home delivery coming soon.</p>
                 {soldOutInBag.length > 0 && <p className="soldout-warning"><Ban size={15} /> Some items in your bag are sold out today. Remove them to continue.</p>}
                 <button className="button primary full glow" disabled={soldOutInBag.length > 0} onClick={() => setCheckout(true)}>
                   Continue to checkout <ArrowRight size={17} />
@@ -780,132 +806,28 @@ export default function Home() {
               </div>
             </>
           ) : (
-            <form
-              className="checkout-form"
-              onSubmit={e => {
-                e.preventDefault();
-                if (soldOutInBag.length) { setCheckout(false); return; }
-                setOrder({
-                  id: `MS-DEMO-${Date.now().toString().slice(-6)}`,
-                  total: subtotal + delivery,
-                  method: fulfilment,
-                  subtotal,
-                  delivery,
-                  lines: cart.filter(i => byId(i.id)).map(i => {
-                    const p = byId(i.id)!;
-                    return `${p.name} — ${packLabel(p, i.grams)} × ${i.quantity}: ${money(linePrice(i, catalog) * i.quantity)}`;
-                  }),
-                });
-                closeCart();
+            <Checkout
+              cart={cart}
+              subtotal={subtotal}
+              count={count}
+              business={business}
+              onBack={() => setCheckout(false)}
+              onPlaced={(placed, token) => {
+                saveMyOrder({ id: placed.id, t: token, at: placed.createdAt });
                 setCart([]);
+                closeCart();
+                setTracking({ id: placed.id, t: token, initial: placed });
               }}
-            >
-              <div className="checkout-disclaimer">
-                <Sparkles size={17} />
-                <span>Preview only. Use sample details; nothing is sent to the shop.</span>
-              </div>
-              <div className="fulfilment-options">
-                <button type="button" className={fulfilment === 'pickup' ? 'active' : ''} onClick={() => setFulfilment('pickup')}>
-                  <Package size={19} />
-                  <strong>Store pickup</strong>
-                  <span>No delivery fee</span>
-                </button>
-                <button type="button" className={fulfilment === 'delivery' ? 'active' : ''} onClick={() => setFulfilment('delivery')}>
-                  <Truck size={19} />
-                  <strong>Local delivery</strong>
-                  <span>Gangavathi only</span>
-                </button>
-              </div>
-              <div className="form-grid">
-                <label>Your name<input name="name" autoComplete="off" placeholder="Sample Customer" required maxLength={80} /></label>
-                <label>Mobile number<input name="phone" type="tel" autoComplete="off" placeholder="0000000000" inputMode="numeric" pattern="[0-9]{10}" title="Enter a 10-digit sample mobile number" required /></label>
-              </div>
-              {fulfilment === 'delivery' && (
-                <label>Delivery address in Gangavathi<textarea name="address" placeholder="Sample street, Gangavathi, Karnataka" required minLength={10} maxLength={300} /></label>
-              )}
-              <label>
-                Gift message <span>(optional)</span>
-                <textarea value={giftNote} onChange={e => setGiftNote(e.target.value)} maxLength={200} placeholder="A little sweetness, with lots of love." />
-              </label>
-              <div className="checkout-totals">
-                <div><span>Subtotal ({count} items)</span><b>{money(subtotal)}</b></div>
-                <div><span>{fulfilment === 'pickup' ? 'Store pickup' : 'Local delivery'}</span><b>{delivery ? money(delivery) : 'Free'}</b></div>
-                {fulfilment === 'delivery' && subtotal < 999 && <small>Free delivery from ₹999</small>}
-                <div className="total-row"><span>Total</span><strong>{money(subtotal + delivery)}</strong></div>
-              </div>
-              <label className="consent">
-                <input type="checkbox" required />
-                <span>I understand this is a preview and no real order or payment will be processed.</span>
-              </label>
-              <button className="button primary full glow" type="submit">Complete preview order <ArrowRight size={17} /></button>
-              <button type="button" className="continue-shopping" onClick={() => setCheckout(false)}>Back to bag</button>
-            </form>
+            />
           )}
         </Modal>
       )}
 
-      {order && (
-        <Modal title="Order preview complete" onClose={() => setOrder(null)} className="success-modal">
-          <div className="success-content">
-            <span className="success-icon"><Check size={34} /></span>
-            <p className="eyebrow">THAT WAS SWEET</p>
-            <h2>
-              A little joy, <em>all wrapped up.</em>
-            </h2>
-            <p>Your preview checkout is complete. No payment was taken and no order was sent. To order for real, call {shop.phone} or message us on WhatsApp.</p>
-            <div className="order-receipt">
-              <div><span>Reference</span><strong>{order.id}</strong></div>
-              <div className="receipt-lines">{order.lines.map((line, index) => <p key={index}>{line}</p>)}</div>
-              <div><span>{order.method === 'pickup' ? 'Store pickup' : 'Local delivery'}</span><strong>{money(order.total)}</strong></div>
-              {giftNote && <p>Gift note: {giftNote}</p>}
-            </div>
-            <button
-              className="button primary full"
-              onClick={() => {
-                const content = `MAHIMA SWEETS — PREVIEW RECEIPT\n${order.id}\nLocation: Gangavathi, Karnataka\nFulfilment: ${order.method}\nItems:\n${order.lines.join('\n')}\nSubtotal: ${money(order.subtotal)}\nDelivery: ${money(order.delivery)}\nSample total: ${money(order.total)}\nGift note: ${giftNote || 'None'}\n\nPREVIEW ONLY — NO ORDER PLACED. NO PAYMENT TAKEN.`;
-                const url = URL.createObjectURL(new Blob([content], { type: 'text/plain;charset=utf-8' }));
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${order.id}.txt`;
-                a.click();
-                setTimeout(() => URL.revokeObjectURL(url), 1000);
-              }}
-            >
-              Download receipt <ArrowDownIcon />
-            </button>
-            <button className="continue-shopping" onClick={() => { setOrder(null); setGiftNote(''); }}>Back to the sweet life</button>
-          </div>
-        </Modal>
-      )}
-
-      {policy && (
-        <Modal title={policy} onClose={() => setPolicy(null)} className="policy-modal">
-          <p className="eyebrow">MAHIMA SWEETS</p>
-          <h2>{policy}</h2>
-          {policy === 'Privacy' ? (
-            <>
-              <p>This website saves product IDs, pack sizes and quantities in your browser’s local storage so your bag survives a refresh. You can remove them by emptying your bag or clearing this site’s browser data.</p>
-              <p>Optional accounts store your mobile number and a protected PIN hash on the server. A secure sign-in cookie lasts up to 30 days. You can delete your account from the Account menu. Sign-in attempts are limited to protect accounts; temporary security counters expire automatically. Mobile numbers are not verified by OTP. Your shopping bag remains saved on this browser.</p>
-              <p>Checkout details are used only in this page’s temporary state. They are not sent to Mahima Sweets or saved by this application. Hosting providers may process standard access logs under their own policies.</p>
-              <p>Product photos are illustrations. The embedded map loads content from Google Maps, and map and directions links open Google Maps. Google privacy terms apply.</p>
-            </>
-          ) : (
-            <>
-              <p>Product images, prices, ingredients, delivery fees and gift assortments on this website are illustrative.</p>
-              <p>Online checkout is a preview only. It does not reserve stock, place an order, collect payment or notify the shop. Delivery is shown at ₹49, free from ₹999; pickup is free. To place a real order, please call or message the shop on WhatsApp.</p>
-              <p>Please confirm availability, ingredients, delivery areas, cancellation and refunds directly with the shop.</p>
-            </>
-          )}
+      {tracking && (
+        <Modal title={`Order ${tracking.id}`} onClose={() => setTracking(null)} className="order-modal">
+          <OrderTracker id={tracking.id} token={tracking.t} initial={tracking.initial} business={business} onClose={() => setTracking(null)} />
         </Modal>
       )}
     </>
-  );
-}
-
-function ArrowDownIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-      <path d="M12 3v12m-5-5 5 5 5-5M5 16v5h14v-5" />
-    </svg>
   );
 }

@@ -32,3 +32,11 @@ export const productsTable = sqliteTable('shop_products', {
 export const images = sqliteTable('shop_images', {
   id:text('id').primaryKey(), mime:text('mime').notNull(), data:text('data').notNull(), createdAt:integer('created_at').notNull(),
 },t=>[index('images_created').on(t.createdAt)]);
+
+/* Pickup orders placed on the website. Prices and totals are calculated on the server. */
+export const orders = sqliteTable('shop_orders', {
+  id:text('id').primaryKey(), tokenHash:text('token_hash').notNull(), status:text('status').notNull(),
+  name:text('name').notNull(), phone:text('phone').notNull(), pickupAt:integer('pickup_at').notNull(),
+  total:integer('total').notNull(), payNow:integer('pay_now').notNull(), paymentRef:text('payment_ref'),
+  refund:text('refund'), data:text('data').notNull(), createdAt:integer('created_at').notNull(), updatedAt:integer('updated_at').notNull(),
+},t=>[index('orders_created').on(t.createdAt),index('orders_status').on(t.status),index('orders_pickup').on(t.pickupAt)]);

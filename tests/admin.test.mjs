@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
-import { adminRequest, adminImageRequest, imageRequest, shopRequest } from '../src/lib/shop-server.mjs';
+import { adminRequest, adminImageRequest, imageRequest, shopRequest, parseBusiness } from '../src/lib/shop-server.mjs';
 
 const PASSWORD = 'test-owner-password-1';
 const ids = ['ladoo', 'jamun', 'gift'];
@@ -39,7 +39,7 @@ const cookieOf = r => r.headers.get('set-cookie').split(';')[0];
 
 test('owner signs in, marks sold out, changes price, sets notice; shop sees it', async () => {
   const { db, admin, shop } = fixture();
-  assert.deepEqual(await shop(), { items: {}, notice: null, products: [], favourites: null });
+  assert.deepEqual(await shop(), { items: {}, notice: null, products: [], favourites: null, business: parseBusiness(null) });
   assert.deepEqual(await (await admin()).json(), { admin: false });
   const login = await admin({ action: 'login', password: PASSWORD });
   assert.equal(login.status, 200);
@@ -55,6 +55,7 @@ test('owner signs in, marks sold out, changes price, sets notice; shop sees it',
     notice: { text: 'Closed tomorrow for Diwali' },
     products: [],
     favourites: null,
+    business: parseBusiness(null),
   });
   // Changing price keeps sold-out state, and reset brings everything back.
   await admin({ action: 'setItem', id: 'ladoo', price: 260 }, c);
@@ -100,7 +101,7 @@ test('controls stay locked when no owner password is configured', async () => {
   const { db, admin, shop, upload } = fixture({ ADMIN_PASSWORD: '' });
   assert.equal((await admin({ action: 'login', password: '' })).status, 503);
   assert.equal((await upload(WEBP)).status, 503);
-  assert.deepEqual(await shop(), { items: {}, notice: null, products: [], favourites: null });
+  assert.deepEqual(await shop(), { items: {}, notice: null, products: [], favourites: null, business: parseBusiness(null) });
   db.close();
 });
 

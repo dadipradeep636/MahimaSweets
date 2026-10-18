@@ -1,13 +1,16 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowUpRight, Camera, Check, ChevronDown, Eye, EyeOff, ImagePlus, LogOut, Lock, Megaphone, Pencil, Plus, RotateCcw, Search, Sparkles, Star, Trash2, X } from 'lucide-react';
+import { ArrowUpRight, Camera, Check, ChevronDown, ClipboardList, Store, UtensilsCrossed, Eye, EyeOff, ImagePlus, LogOut, Lock, Megaphone, Pencil, Plus, RotateCcw, Search, Sparkles, Star, Trash2, X } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import { ProductCard } from '@/components/ProductCard';
 import {
   catalog as builtinCatalog, money, defaultPack, defaultPriceScale, packLabel, buildCatalog, pickFavourites, sectionOf, sectionNames,
   sweetCategories, sellDefault, defaultFavourites, type Product, type ProductData, type ProductRecord, type Sell, type ShopState,
 } from '@/lib/products';
+import { preparePhoto } from '@/lib/photo';
+import OrdersPanel from './OrdersPanel';
+import ShopDetails from './ShopDetails';
 import './admin.css';
 
 type State = ShopState & { admin: boolean; notice?: { text: string; active: boolean } | null; error?: string; savedId?: string };
@@ -130,7 +133,7 @@ export default function AdminPage() {
           </form>
         </main>
       ) : (
-        <Controls state={state} change={change} flash={flash} />
+        <Dashboard state={state} change={change} flash={flash} onSignedOut={() => { setState({ admin: false, items: {}, notice: null }); setLoginError('You were signed out. Please sign in again.'); }} />
       )}
 
       {toast && (
@@ -139,6 +142,38 @@ export default function AdminPage() {
         </div>
       )}
     </div>
+  );
+}
+
+type View = 'orders' | 'menu' | 'shop';
+
+function Dashboard({ state, change, flash, onSignedOut }: { state: State; change: Change; flash: (t: string, bad?: boolean) => void; onSignedOut: () => void }) {
+  const [view, setView] = useState<View>(() => {
+    try { const v = sessionStorage.getItem('mahima-admin-view'); if (v === 'menu' || v === 'shop' || v === 'orders') return v; } catch {}
+    return 'orders';
+  });
+  const [pending, setPending] = useState(0);
+  const go = (v: View) => { setView(v); try { sessionStorage.setItem('mahima-admin-view', v); } catch {} window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  useEffect(() => { document.title = pending ? `(${pending}) Shop controls | Mahima Sweets` : 'Shop controls | Mahima Sweets'; }, [pending]);
+  const paymentReady = !!(state.business?.upiId || state.business?.qrImageId);
+  const views: [View, string, typeof ClipboardList][] = [['orders', 'Orders', ClipboardList], ['menu', 'Menu', UtensilsCrossed], ['shop', 'Shop details', Store]];
+  return (
+    <>
+      <nav className="adm-views" aria-label="Sections">
+        {views.map(([k, label, Icon]) => (
+          <button key={k} className={view === k ? 'active' : ''} aria-current={view === k ? 'page' : undefined} onClick={() => go(k)}>
+            <Icon size={18} /> {label}
+            {k === 'orders' && pending > 0 && <b>{pending}</b>}
+            {k === 'shop' && !paymentReady && <b className="warn">!</b>}
+          </button>
+        ))}
+      </nav>
+      <div className={view === 'orders' ? 'adm-main' : 'adm-hidden'}>
+        <OrdersPanel flash={flash} onCount={setPending} onSignedOut={onSignedOut} />
+      </div>
+      {view === 'menu' && <Controls state={state} change={change} flash={flash} />}
+      {view === 'shop' && <main className="adm-main"><ShopDetails business={state.business} change={change} flash={flash} /></main>}
+    </>
   );
 }
 
@@ -312,35 +347,6 @@ function ItemRow({ product: p, record, soldOut, priceChanged, change, index, onE
       )}
     </article>
   );
-}
-
-/* ---------- Photo: crop to a square and shrink in the browser, then upload ---------- */
-async function preparePhoto(file: File): Promise<Blob> {
-  let source: CanvasImageSource, w: number, h: number;
-  try {
-    const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
-    source = bmp; w = bmp.width; h = bmp.height;
-  } catch {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    await new Promise<void>((resolve, reject) => { img.onload = () => resolve(); img.onerror = () => reject(new Error('photo')); img.src = url; });
-    URL.revokeObjectURL(url);
-    source = img; w = img.naturalWidth; h = img.naturalHeight;
-  }
-  const side = Math.min(w, h), size = Math.min(1000, side);
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = size;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('photo');
-  ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(source, (w - side) / 2, (h - side) / 2, side, side, 0, 0, size, size);
-  const encode = (type: string, q: number) => new Promise<Blob | null>(r => canvas.toBlob(r, type, q));
-  for (const q of [0.84, 0.72, 0.6]) {
-    let blob = await encode('image/webp', q);
-    if (!blob || blob.type !== 'image/webp') blob = await encode('image/jpeg', q);
-    if (blob && blob.size < 1_400_000) return blob;
-  }
-  throw new Error('photo');
 }
 
 type Form = {

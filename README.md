@@ -126,3 +126,19 @@ For local testing, put `ACCOUNT_PEPPER` and `ADMIN_PASSWORD` test values in `.de
 - **"Our favourites" showcase**: pick the four items; deleted or hidden picks fall back to the originals.
 
 Data: `shop_products` (edits and added items) and `shop_images` (photos as base64, served from `/api/image/?id=…` with long caching) from `drizzle/0002_products_and_photos.sql`. Upload endpoint `/api/admin/image/` accepts JPEG/PNG/WebP up to 1.5 MB (checked by file signature); unused uploads are removed after a day. The website builds its menu with `buildCatalog()` in `src/lib/products.ts`.
+
+## Pickup orders, UPI advance and policies (Oct 2026)
+
+Online checkout now places **real store-pickup orders** (home delivery is shown as "Coming soon").
+
+**Customer journey:** bag → choose pickup day/time (30-minute slots, 9:00 AM – 9:00 PM IST, at least the "getting-ready time" from now, up to 7 days ahead) → name + mobile → pay the minimum advance (default 25%) or the full amount → place order → payment page with the shop's UPI QR, a "Pay with a UPI app" button (`upi://pay` link with the exact amount) and the UPI ID → customer enters the 12-digit UPI reference → live order page (`/order/?id=…&t=…`) showing every step, auto-refreshing. Customers can cancel within **30 minutes** (refund due if they had paid). Unpaid orders lapse after 2 hours. A "Your order" button on the website brings them back to the latest open order (saved in the browser).
+
+**Shop owner (/admin → Orders):** new orders appear automatically with a chime. Steps: *Payment found* (or *Not found*, which asks the customer to recheck) → *Mark ready* (+ "Tell customer" WhatsApp) → *Picked up · got ₹balance*. Also *Cancel* (with a reason the customer sees; refund marked due if paid), *Not collected* (advance kept per policy) and *Mark refund sent*.
+
+**Shop details (/admin → Shop details):** UPI ID, QR photo, name in UPI app, minimum advance (25–100%), getting-ready time, business name, owner, **FSSAI number (leave empty until available; once set it appears in the footer, Terms and receipts)**, customer email and **Grievance Officer** (name, mobile, email). Online orders stay closed (customers are asked to call/WhatsApp) until a UPI ID or QR is added.
+
+**Policies:** `/privacy/` (DPDP Act 2023 / Rules 2025), `/terms/` and `/refund-policy/` (cancel within 30 min; damaged or wrong items reported within 2 hours with a photo → replace or refund; refunds to the same UPI in 5–7 working days; uncollected orders keep the advance). They read the live shop details. Have a CA or lawyer review before relying on them.
+
+**Code:** `src/lib/orders-server.mjs` (order rules; totals are always recalculated on the server via `src/lib/price-cart.ts`), `src/lib/pickup.mjs` (slot rules shared by browser and server), `src/components/Checkout.tsx`, `src/components/OrderTracker.tsx`, `src/app/admin/OrdersPanel.tsx`, `src/app/admin/ShopDetails.tsx`, `src/components/LegalPage.tsx`. Table `shop_orders` from `drizzle/0003_pickup_orders.sql`. Tests: `tests/orders.test.mjs`.
+
+Note: UPI payments go straight to the shop's account, so the shop confirms each payment by matching the amount and UPI reference in its bank/UPI business app. Automatic confirmation would need a payment gateway (e.g. Razorpay, Cashfree), which can be added later.

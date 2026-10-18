@@ -46,11 +46,22 @@ export type ProductData = {
   category?: string; section?: 'sweets' | 'namkeens' | 'hot'; sell?: Sell; price?: number; image?: string;
 };
 export type ProductRecord = { id: string; custom: boolean; hidden: boolean; data: ProductData };
+/* Shop details from /admin → Shop details. Shown on bills and policy pages and used for UPI payment. */
+export type Business = {
+  legalName: string; ownerName: string; fssai: string; email: string;
+  grievanceName: string; grievancePhone: string; grievanceEmail: string;
+  upiId: string; payeeName: string; qrImageId: string; qrImage: string; advancePercent: number; prepMinutes: number;
+};
+export const businessDefaults: Business = {
+  legalName: 'Mahima Sweets', ownerName: '', fssai: '', email: '', grievanceName: '', grievancePhone: '', grievanceEmail: '',
+  upiId: '', payeeName: 'Mahima Sweets', qrImageId: '', qrImage: '', advancePercent: 25, prepMinutes: 60,
+};
 export type ShopState = {
   items: Record<string, { soldOut: boolean; price: number | null }>;
   notice: { text: string } | null;
   products?: ProductRecord[];
   favourites?: string[] | null;
+  business?: Business;
 };
 export const applyShopState = (p: Product, state: ShopState | null): Product => {
   const live = state?.items[p.id];

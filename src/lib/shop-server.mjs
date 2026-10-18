@@ -17,15 +17,15 @@ const SWEET_CATEGORIES = ['Traditional', 'Dry fruit', 'Milk sweets', 'Syrupy'];
 const SECTIONS = { sweets: null, namkeens: 'Namkeens', hot: 'Hot & Crispy' };
 const SELL_TYPES = ['large', 'small', 'pieces'];
 
-const hex = bytes => Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2, '0')).join('');
-const random = size => hex(crypto.getRandomValues(new Uint8Array(size)));
-const digest = async text => hex(await crypto.subtle.digest('SHA-256', encoder.encode(text)));
-async function keyed(value, pepper) {
+export const hex = bytes => Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2, '0')).join('');
+export const random = size => hex(crypto.getRandomValues(new Uint8Array(size)));
+export const digest = async text => hex(await crypto.subtle.digest('SHA-256', encoder.encode(text)));
+export async function keyed(value, pepper) {
   const key = await crypto.subtle.importKey('raw', encoder.encode(pepper), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   return hex(await crypto.subtle.sign('HMAC', key, encoder.encode(value)));
 }
-function equal(a, b) { if (a.length !== b.length) return false; let diff = 0; for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i); return diff === 0; }
-function json(body, status = 200, extra = {}) {
+export function equal(a, b) { if (a.length !== b.length) return false; let diff = 0; for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i); return diff === 0; }
+export function json(body, status = 200, extra = {}) {
   return Response.json(body, { status, headers: { 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff', 'X-Robots-Tag': 'noindex', ...extra } });
 }
 function cookie(token, age = LIFE) { return `${COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${age}`; }
@@ -40,21 +40,21 @@ async function readBody(request, max) {
   const bytes = new Uint8Array(size); let offset = 0; for (const c of chunks) { bytes.set(c, offset); offset += c.length; }
   return bytes;
 }
-async function bodyJSON(request) {
+export async function bodyJSON(request) {
   if (!request.headers.get('content-type')?.startsWith('application/json')) throw new Error('body');
   return JSON.parse(new TextDecoder().decode(await readBody(request, 8192)));
 }
-async function limited(db, key, max, seconds, now) {
+export async function limited(db, key, max, seconds, now) {
   const window = Math.floor(now / seconds);
   const row = await db.prepare('INSERT INTO shop_auth_limits (key,attempts,expires_at) VALUES (?,1,?) ON CONFLICT(key) DO UPDATE SET attempts=attempts+1 RETURNING attempts').bind(`${key}:${window}`, (window + 1) * seconds).first();
   return row.attempts > max;
 }
-async function signedIn(request, db, now) {
+export async function signedIn(request, db, now) {
   const token = tokenFrom(request);
   if (!/^[a-f0-9]{64}$/.test(token)) return false;
   return !!(await db.prepare('SELECT 1 AS ok FROM shop_admin_sessions WHERE token_hash=? AND expires_at>?').bind(await digest(token), now).first());
 }
-function sameOrigin(request) {
+export function sameOrigin(request) {
   return request.headers.get('origin') === new URL(request.url).origin && request.headers.get('sec-fetch-site') !== 'cross-site';
 }
 function toBase64(bytes) { let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000)); return btoa(s); }
@@ -66,15 +66,25 @@ function sniff(bytes) {
   return null;
 }
 /* Plain text only: trims, removes control characters, collapses spaces, caps length. */
-const clean = (value, max) => (typeof value === 'string' ? value.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max) : '');
-const imageUrl = id => `/api/image/?id=${id}`;
+export const clean = (value, max) => (typeof value === 'string' ? value.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max) : '');
+export const imageUrl = id => `/api/image/?id=${id}`;
 
-async function readState(db) {
-  const [rows, notice, products, favourites] = await Promise.all([
+/* Shop details shown on bills and policy pages, and used for UPI payment. All of these are public information. */
+export const BUSINESS_DEFAULTS = { legalName: 'Mahima Sweets', ownerName: '', fssai: '', email: '', grievanceName: '', grievancePhone: '', grievanceEmail: '', upiId: '', payeeName: 'Mahima Sweets', qrImageId: '', advancePercent: 25, prepMinutes: 60 };
+export function parseBusiness(value) {
+  let b = {};
+  try { if (value) b = JSON.parse(value); } catch {}
+  const out = { ...BUSINESS_DEFAULTS, ...b };
+  return { ...out, qrImage: out.qrImageId ? imageUrl(out.qrImageId) : '' };
+}
+
+export async function readState(db) {
+  const [rows, notice, products, favourites, business] = await Promise.all([
     db.prepare('SELECT id, sold_out, price FROM shop_items').all(),
     db.prepare("SELECT value FROM shop_settings WHERE key='notice'").first(),
     db.prepare('SELECT id, custom, hidden, data, image_id FROM shop_products ORDER BY created_at, id').all(),
     db.prepare("SELECT value FROM shop_settings WHERE key='favourites'").first(),
+    db.prepare("SELECT value FROM shop_settings WHERE key='business'").first().catch(() => null),
   ]);
   const items = {};
   for (const r of rows.results || []) items[r.id] = { soldOut: !!r.sold_out, price: r.price ?? null };
@@ -88,17 +98,17 @@ async function readState(db) {
   }
   let favs = null;
   try { if (favourites) favs = JSON.parse(favourites.value); } catch {}
-  return { items, notice: { text: String(parsed.text || '').slice(0, NOTICE_MAX), active: !!parsed.active }, products: list, favourites: Array.isArray(favs) ? favs : null };
+  return { items, notice: { text: String(parsed.text || '').slice(0, NOTICE_MAX), active: !!parsed.active }, products: list, favourites: Array.isArray(favs) ? favs : null, business: parseBusiness(business?.value) };
 }
 
 /* Public: GET /api/shop/ */
 export async function shopRequest(request, env) {
-  const empty = { items: {}, notice: null, products: [], favourites: null };
+  const empty = { items: {}, notice: null, products: [], favourites: null, business: parseBusiness(null) };
   if (request.method !== 'GET') return json({ error: 'Method not allowed.' }, 405, { Allow: 'GET' });
   if (!env.DB) return json(empty);
   try {
-    const { items, notice, products, favourites } = await readState(env.DB);
-    return json({ items, notice: notice.active && notice.text ? { text: notice.text } : null, products, favourites }, 200, { 'Cache-Control': 'public, max-age=0, must-revalidate' });
+    const { items, notice, products, favourites, business } = await readState(env.DB);
+    return json({ items, notice: notice.active && notice.text ? { text: notice.text } : null, products, favourites, business }, 200, { 'Cache-Control': 'public, max-age=0, must-revalidate' });
   } catch {
     // If the tables are not ready yet, the shop simply shows the built-in menu, all available.
     return json(empty);
@@ -118,11 +128,11 @@ export async function imageRequest(request, env) {
   }
 }
 
-function setupMissing(env) {
+export function setupMissing(env) {
   const pepper = env.ACCOUNT_PEPPER, password = env.ADMIN_PASSWORD;
   return !env.DB || !pepper || pepper.length < 32 || !password || password.length < 10;
 }
-const NOT_SET_UP = 'Shop controls are not set up yet. Add the ADMIN_PASSWORD secret in hosting settings.';
+export const NOT_SET_UP = 'Shop controls are not set up yet. Add the ADMIN_PASSWORD secret in hosting settings.';
 
 /* Owner: POST /api/admin/image/ with the photo as the request body. */
 export async function adminImageRequest(request, env) {
@@ -139,7 +149,7 @@ export async function adminImageRequest(request, env) {
     const id = random(12);
     await db.batch([
       // Tidy up photos that were uploaded but never used in a saved item.
-      db.prepare('DELETE FROM shop_images WHERE created_at<? AND id NOT IN (SELECT image_id FROM shop_products WHERE image_id IS NOT NULL)').bind(now - 86400),
+      db.prepare("DELETE FROM shop_images WHERE created_at<? AND id NOT IN (SELECT image_id FROM shop_products WHERE image_id IS NOT NULL) AND instr(COALESCE((SELECT value FROM shop_settings WHERE key='business'),''), id)=0").bind(now - 86400),
       db.prepare('INSERT INTO shop_images (id,mime,data,created_at) VALUES (?,?,?,?)').bind(id, mime, toBase64(bytes), now),
     ]);
     return json({ id, url: imageUrl(id) });
@@ -348,6 +358,34 @@ export async function adminRequest(request, env, info = {}, legacyScales) {
       if (!Array.isArray(list) || list.length < 1 || list.length > 4 || new Set(list).size !== list.length) return json({ error: 'Choose up to four different items.' }, 400);
       for (const id of list) if (!(await known(id))) return json({ error: 'Unknown item.' }, 400);
       await db.prepare("INSERT INTO shop_settings (key,value,updated_at) VALUES ('favourites',?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at").bind(JSON.stringify(list), now).run();
+      return state();
+    }
+
+    if (action === 'setBusiness') {
+      const f = body.business && typeof body.business === 'object' ? body.business : null;
+      if (!f) return json({ error: 'Please check and try again.' }, 400);
+      const fssai = clean(f.fssai, 20).replace(/\s/g, '');
+      if (fssai && !/^\d{14}$/.test(fssai)) return json({ error: 'FSSAI number has 14 digits. Leave it empty if you do not have it yet.' }, 400);
+      const phone = clean(f.grievancePhone, 20).replace(/[\s-]/g, '').replace(/^\+91/, '');
+      if (phone && !/^[6-9]\d{9}$/.test(phone)) return json({ error: 'Enter a 10-digit mobile number for complaints.' }, 400);
+      const email = clean(f.email, 120), gEmail = clean(f.grievanceEmail, 120);
+      const emailOk = e => !e || /^[^\s@<>]+@[^\s@<>]+\.[a-z]{2,}$/i.test(e);
+      if (!emailOk(email) || !emailOk(gEmail)) return json({ error: 'Please check the email address.' }, 400);
+      const upiId = clean(f.upiId, 80);
+      if (upiId && !/^[a-z0-9._-]{2,256}@[a-z][a-z0-9.-]{1,63}$/i.test(upiId)) return json({ error: 'UPI ID looks like name@bank. Please check it.' }, 400);
+      const advancePercent = Number(f.advancePercent);
+      if (!Number.isInteger(advancePercent) || advancePercent < 25 || advancePercent > 100) return json({ error: 'Advance must be between 25% and 100%.' }, 400);
+      const prepMinutes = Number(f.prepMinutes);
+      if (!Number.isInteger(prepMinutes) || prepMinutes < 30 || prepMinutes > 480) return json({ error: 'Getting-ready time must be between 30 minutes and 8 hours.' }, 400);
+      let qrImageId = typeof f.qrImageId === 'string' ? f.qrImageId : '';
+      if (qrImageId && !(await imageExists(qrImageId))) return json({ error: 'Please add the QR photo again.' }, 400);
+      const business = {
+        legalName: clean(f.legalName, 100) || 'Mahima Sweets', ownerName: clean(f.ownerName, 80), fssai, email,
+        grievanceName: clean(f.grievanceName, 80), grievancePhone: phone, grievanceEmail: gEmail,
+        upiId, payeeName: clean(f.payeeName, 60) || 'Mahima Sweets', qrImageId, advancePercent, prepMinutes,
+      };
+      const ops = [db.prepare("INSERT INTO shop_settings (key,value,updated_at) VALUES ('business',?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at").bind(JSON.stringify(business), now)];
+      await db.batch(ops);
       return state();
     }
 
