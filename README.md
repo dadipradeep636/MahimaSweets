@@ -147,13 +147,9 @@ Note: UPI payments go straight to the shop's account, so the shop confirms each 
 
 `/admin → Shop details → Homepage animation` picks what greets customers at the top of the homepage:
 
-- **Zero Gravity** (3D) – real cut-out photos of our sweets (`public/images/float/`) levitate above a glowing ring, dissolve into thousands of sugar pearls coloured from the photo, swirl weightlessly and gather into the next sweet (ladoo, poothrekulu, rasmalai, jalebi, coconut burfi, Dharwad peda). Pearls part around the mouse; a tap scatters them.
-- **Golden Orbit** (true 3D) – a festive thali in the centre with sweets orbiting it; tilts with the mouse.
-- **Sweet Rain** (true 3D) – sweets tumble in slow motion and settle on a brass plate, with falling silver varq.
-- **Diwali Glow** (2.5D) – the real platter photo on a rangoli, flickering diyas, marigold petals, steam.
-- **Classic** – the original floating platter.
+- **Classic** – the floating platter with a ladoo and kaju katli.
+- **Diwali Glow** – the real platter photo on a rangoli, flickering diyas, marigold petals and steam.
 
-The 3D sweets are modelled in code with three.js (`src/components/hero/`), loaded only when a 3D style is chosen.
-Scenes pause when off-screen or in a background tab, use lighter models on phones, show a still frame for
-"reduce motion" users, and fall back to Classic if the device has no WebGL. `/?hero=zerog|orbit|rain|diwali|classic`
-previews a style without saving it. The choice is stored in `shop_settings` (key `hero`) – no new migration.
+Both are plain HTML/CSS (no 3D library), light on every phone, and calm down for visitors who turn off animations.
+`/?hero=classic|diwali` previews a style without saving it. The choice is stored in `shop_settings` (key `hero`);
+any other saved value falls back to Classic.

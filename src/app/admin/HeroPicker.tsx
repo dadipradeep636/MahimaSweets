@@ -7,11 +7,8 @@ import type { HeroStyle } from '@/lib/products';
 type Change = (body: object, done: string) => Promise<unknown>;
 
 const STYLES: { id: HeroStyle; name: string; tag: string; about: string }[] = [
-  { id: 'zerog', name: 'Zero Gravity', tag: 'New · 3D', about: 'Real photos of our sweets float above a glowing ring, dissolve into thousands of sugar pearls and re-form into the next – ladoo, poothrekulu, rasmalai, jalebi, coconut burfi, Dharwad peda. Customers can tap to scatter them.' },
-  { id: 'orbit', name: 'Golden Orbit', tag: '3D', about: 'A festive thali floats in the centre while ladoo, kaju katli, jalebi and more circle it like a golden galaxy. Tilts with the mouse.' },
-  { id: 'rain', name: 'Sweet Rain', tag: '3D', about: 'Sweets tumble down in slow motion through warm light and settle softly on a brass plate, with falling silver varq.' },
-  { id: 'diwali', name: 'Diwali Glow', tag: 'Festive', about: 'Our real platter photo on a colourful rangoli, ringed by flickering diyas, with marigold petals drifting down.' },
   { id: 'classic', name: 'Classic', tag: 'Simple', about: 'The original floating platter with a ladoo and kaju katli. Lightest on old phones.' },
+  { id: 'diwali', name: 'Diwali Glow', tag: 'Festive', about: 'Our real platter photo on a colourful rangoli, ringed by flickering diyas, with marigold petals drifting down.' },
 ];
 
 /* Owner picks which animation greets customers at the top of the homepage. */

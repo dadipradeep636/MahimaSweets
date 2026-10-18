@@ -231,29 +231,8 @@ button:disabled { cursor: not-allowed; opacity: 0.4; }
 .hv-card button:hover { transform: rotate(90deg) scale(1.1); }
 
 /* ---------- Hero styles the owner can switch in /admin ---------- */
-/* True 3D (three.js) scenes */
-.h3 { isolation: isolate; }
-.h3 canvas { position: absolute; inset: -6% -8%; width: 116%; height: 112%; display: block; touch-action: pan-y; }
-.h3-glow { position: absolute; inset: 6%; border-radius: 50%; background: radial-gradient(circle, rgba(255,196,110,.38), rgba(232,140,50,.14) 42%, transparent 70%); filter: blur(14px); animation: breathe 6s ease-in-out infinite; }
-.h3-wait { animation: none; opacity: 1; }
-.h3-wait .h3-glow { opacity: .5; }
-.h3-rain canvas { -webkit-mask: linear-gradient(transparent, #000 22%); mask: linear-gradient(transparent, #000 22%); }
-.h3-shafts { position: absolute; inset: -12% 0 10%; pointer-events: none; -webkit-mask: linear-gradient(#000 10%, transparent 92%); mask: linear-gradient(#000 10%, transparent 92%); }
-.h3-shafts i { position: absolute; top: 0; height: 100%; width: 22%; background: radial-gradient(ellipse 50% 100% at 50% 0, rgba(255,222,160,.26), rgba(255,190,110,.08) 55%, transparent 80%); filter: blur(22px); transform-origin: top center; animation: shaft 9s ease-in-out infinite; }
-.h3-shafts i:nth-child(1) { left: 22%; transform: rotate(14deg); }
-.h3-shafts i:nth-child(2) { left: 42%; width: 16%; transform: rotate(2deg); animation-delay: -3s; }
-.h3-shafts i:nth-child(3) { left: 58%; transform: rotate(-12deg); animation-delay: -6s; }
-@keyframes shaft { 50% { opacity: .45; } }
-[data-theme="light"] .h3-glow { background: radial-gradient(circle, rgba(255,190,100,.45), rgba(240,160,70,.16) 45%, transparent 70%); }
-
-/* Zero Gravity caption + hint */
-.h3-zerog canvas { -webkit-mask: radial-gradient(ellipse 50% 50% at 50% 50%, #000 72%, transparent 100%); mask: radial-gradient(ellipse 50% 50% at 50% 50%, #000 72%, transparent 100%); }
-.zg-label { position: absolute; left: 50%; bottom: -3%; z-index: 2; margin: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 2px; font-family: var(--serif, 'Playfair Display', serif); font-style: italic; font-size: clamp(20px, 2.2vw, 28px); white-space: nowrap; color: var(--gold-hi); text-shadow: 0 2px 18px rgba(0,0,0,.6); pointer-events: none; opacity: 0; animation: zgLabel 4.4s cubic-bezier(.2,.8,.2,1) both; }
-.zg-label span { font-family: var(--sans, 'DM Sans', sans-serif); font-style: normal; font-size: 11px; font-weight: 700; letter-spacing: .28em; text-transform: uppercase; color: var(--muted); }
-@keyframes zgLabel { 0% { opacity: 0; transform: translate(-50%, 14px); filter: blur(6px); } 14% { opacity: 1; transform: translate(-50%, 0); filter: blur(0); } 82% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -8px); filter: blur(4px); } }
-.zg-hint { position: absolute; right: 4%; top: 6%; z-index: 2; margin: 0; padding: 7px 14px; border-radius: 99px; border: 1px solid var(--line-strong); background: var(--glass); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); font-size: 13px; font-weight: 600; color: var(--gold-hi); pointer-events: none; animation: fadeUp .8s 3.2s both, bob2 3s 4s ease-in-out infinite; transition: opacity .5s; }
-.zg-hint.gone { opacity: 0 !important; }
-
+.hero-wait { animation: none; opacity: 1; }
+.hero-wait .hv-glow { opacity: .5; }
 /* Diwali Glow (2.5D) */
 .hd { perspective: 1200px; }
 .hd-glow { position: absolute; inset: 4% 2% 0; border-radius: 50%; background: radial-gradient(ellipse at 50% 62%, rgba(255,170,70,.5), rgba(214,90,30,.18) 45%, transparent 70%); filter: blur(12px); animation: breathe 4.5s ease-in-out infinite; }
@@ -711,7 +690,6 @@ button:disabled { cursor: not-allowed; opacity: 0.4; }
   .hero-copy { margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
   .hero-buttons, .hero-chips { justify-content: center; }
   .hero-visual { max-width: 620px; margin-top: 10px; }
-  .h3 canvas { inset: -4% 0; width: 100%; height: 108%; }
   .scroll-cue { display: none; }
   .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: none; }
   .spot-0 { grid-column: span 2; grid-row: auto; min-height: 520px; }

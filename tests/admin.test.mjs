@@ -201,13 +201,13 @@ test('owner edits a built-in item, changes its photo and price, then undoes ever
 test('owner switches the homepage animation; only known styles are accepted', async () => {
   const { db, admin, shop } = fixture();
   assert.equal((await shop()).hero, 'classic');
-  assert.equal((await admin({ action: 'setHero', hero: 'orbit' })).status, 401);
+  assert.equal((await admin({ action: 'setHero', hero: 'diwali' })).status, 401);
   const c = cookieOf(await admin({ action: 'login', password: PASSWORD }));
-  for (const hero of ['orbit', 'rain', 'diwali', 'zerog', 'classic']) {
+  for (const hero of ['diwali', 'classic']) {
     assert.equal((await admin({ action: 'setHero', hero }, c)).status, 200);
     assert.equal((await shop()).hero, hero);
   }
-  for (const hero of ['', 'fireworks', null, 7, '<script>']) assert.equal((await admin({ action: 'setHero', hero }, c)).status, 400);
+  for (const hero of ['', 'orbit', 'rain', 'zerog', 'fireworks', null, 7, '<script>']) assert.equal((await admin({ action: 'setHero', hero }, c)).status, 400);
   assert.equal((await shop()).hero, 'classic');
   db.close();
 });
