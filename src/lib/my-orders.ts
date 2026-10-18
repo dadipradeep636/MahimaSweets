@@ -24,7 +24,7 @@ export type OrderView = {
   name: string; phone: string; pickupAt: number;
   lines: { id: string; name: string; pack: string; grams: number; qty: number; unit: number; amount: number }[];
   total: number; payNow: number; payType: 'advance' | 'full'; balance: number; paymentRef: string | null;
-  refund: null | 'due' | 'done' | 'kept'; note: string; shopNote: string; cancelReason: string; cancelledBy: string;
+  refund: null | 'due' | 'check' | 'done' | 'kept'; note: string; shopNote: string; cancelReason: string; cancelledBy: string;
   history: { status: string; at: number; by?: string }[];
-  createdAt: number; cancelUntil: number; canCancel: boolean; canPay: boolean;
+  createdAt: number; cancelUntil: number; canCancel: boolean; canPay: boolean; payBy?: number;
 };

@@ -91,7 +91,7 @@ export default function OrdersPanel({ flash, onCount, onSignedOut }: { flash: (t
     for (const o of orders || []) c[TAB_OF[o.status]]++;
     return c;
   }, [orders]);
-  const refundsDue = (orders || []).filter(o => o.refund === 'due').length;
+  const refundsDue = (orders || []).filter(o => o.refund === 'due' || o.refund === 'check').length;
   useEffect(() => onCount(counts.action + refundsDue), [counts.action, refundsDue, onCount]);
 
   async function update(body: object, done: string) {
@@ -168,6 +168,7 @@ function OrderCard({ o, now, index, busy, update }: { o: AdminOrder; now: number
           <strong className="adm-order-id">{o.id}</strong>
           <span className={`adm-status st-${o.status}`}>{STATUS_LABEL[o.status]}</span>
           {o.refund === 'due' && <span className="adm-status refund">Refund {money(o.payNow)} due</span>}
+          {o.refund === 'check' && <span className="adm-status refund">Check bank · refund {money(o.payNow)} if received</span>}
           {o.refund === 'done' && <span className="adm-status done">Refunded</span>}
           {o.refund === 'kept' && <span className="adm-status off">Advance kept</span>}
         </div>
@@ -211,7 +212,7 @@ function OrderCard({ o, now, index, busy, update }: { o: AdminOrder; now: number
 
       {cancelling ? (
         <div className="adm-cancel-box">
-          <p><b>{cancelling === 'cancel' ? 'Cancel this order?' : 'Mark as not collected?'}</b> {cancelling === 'cancel' ? (paid ? `The customer will see a refund of ${money(o.payNow)} is due.` : 'Nothing was paid.') : 'The advance is kept as per the refund policy.'}</p>
+          <p><b>{cancelling === 'cancel' ? 'Cancel this order?' : 'Mark as not collected?'}</b> {cancelling === 'cancel' ? (o.status === 'payment_check' ? `Payment is not verified yet – check your bank and refund ${money(o.payNow)} only if it arrived.` : paid ? `The customer will see a refund of ${money(o.payNow)} is due.` : 'Nothing was paid.') : 'The advance is kept as per the refund policy.'}</p>
           {cancelling === 'cancel' && (
             <div className="adm-chips">
               {REASONS.map(r => <button key={r} type="button" className={reason === r ? 'active' : ''} onClick={() => setReason(r)}>{r}</button>)}
@@ -245,8 +246,12 @@ function OrderCard({ o, now, index, busy, update }: { o: AdminOrder; now: number
           {o.refund === 'due' && (
             <button className="button primary" disabled={busy} onClick={() => update({ action: 'refunded', id: o.id }, `Refund for ${o.id} marked as sent`)}><IndianRupee size={16} /> Mark refund sent</button>
           )}
+          {o.refund === 'check' && <>
+            <button className="button primary" disabled={busy} onClick={() => update({ action: 'refunded', id: o.id }, `Refund for ${o.id} marked as sent`)}><IndianRupee size={16} /> Money came · refund sent</button>
+            <button className="button secondary" disabled={busy} onClick={() => update({ action: 'no_payment', id: o.id }, `${o.id}: no payment, nothing to refund`)}>No payment came</button>
+          </>}
           {o.canCancel && <button type="button" className="adm-danger" onClick={() => setCancelling('cancel')}><X size={15} /> Cancel</button>}
-          {['confirmed', 'ready'].includes(o.status) && <button type="button" className="adm-danger soft" onClick={() => setCancelling('not_collected')}>Not collected</button>}
+          {['confirmed', 'ready'].includes(o.status) && now >= o.pickupAt && <button type="button" className="adm-danger soft" onClick={() => setCancelling('not_collected')}>Not collected</button>}
         </div>
       )}
       {o.status === 'confirmed' && <p className="adm-hint">Placed {formatTime(o.createdAt)}. When packed, tap “Mark ready” – the customer’s order page updates.</p>}

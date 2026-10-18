@@ -6,7 +6,8 @@
  * Order steps:
  *   awaiting_payment → payment_check (customer sent UPI reference) → confirmed (owner found the payment)
  *   → ready (packed, waiting at the counter) → picked_up (balance paid at the shop)
- *   Any open order can become cancelled. Refund: null | 'due' | 'done' | 'kept' (not collected, advance kept per policy).
+ *   Any open order can become cancelled. Refund: null | 'due' (payment verified) | 'check' (a UPI reference was sent but not yet verified –
+ *   refund only if the money really arrived) | 'done' | 'kept' (not collected, advance kept per policy).
  *
  * Totals are always calculated here from the live menu; the browser's numbers are never trusted.
  */
@@ -15,21 +16,22 @@ import { isValidPickup, CANCEL_WINDOW, PAY_WINDOW } from './pickup.mjs';
 
 const OPEN = ['awaiting_payment', 'payment_check', 'confirmed', 'ready'];
 const CUSTOMER_CANCELLABLE = ['awaiting_payment', 'payment_check', 'confirmed'];
-const PAID = ['payment_check', 'confirmed', 'ready'];
 const MAX_LINES = 30;
 
 function parseData(row) { try { return JSON.parse(row.data); } catch { return {}; } }
 
 /* Unpaid orders lapse after PAY_WINDOW so they do not clutter the shop's list. */
 async function expireUnpaid(db, now) {
-  // updated_at is when the order (last) started waiting for payment.
-  const rows = await db.prepare("SELECT id, data FROM shop_orders WHERE status='awaiting_payment' AND updated_at<?").bind(now - PAY_WINDOW).all();
+  // updated_at is when the order (last) started waiting for payment. Orders also lapse once the pickup time has passed.
+  const rows = await db.prepare("SELECT id, data, pickup_at FROM shop_orders WHERE status='awaiting_payment' AND (updated_at<? OR pickup_at<?)").bind(now - PAY_WINDOW, now).all();
   for (const r of rows.results || []) {
     const d = parseData(r);
+    // If a payment reference was sent earlier (then marked "not found"), money may still have arrived: flag it for checking.
+    const sentBefore = (d.history || []).some(h => h.status === 'payment_check');
     d.history = [...(d.history || []), { status: 'cancelled', at: now, by: 'system' }];
-    d.cancelReason = 'Payment was not received within 2 hours.';
+    d.cancelReason = r.pickup_at < now ? 'Payment was not received before the pickup time.' : 'Payment was not received within 2 hours.';
     d.cancelledBy = 'system';
-    await db.prepare("UPDATE shop_orders SET status='cancelled', data=?, updated_at=? WHERE id=? AND status='awaiting_payment'").bind(JSON.stringify(d), now, r.id).run();
+    await db.prepare("UPDATE shop_orders SET status='cancelled', refund=?, data=?, updated_at=? WHERE id=? AND status='awaiting_payment'").bind(sentBefore ? 'check' : null, JSON.stringify(d), now, r.id).run();
   }
 }
 
@@ -46,7 +48,7 @@ function publicView(row, now) {
     total: row.total,
     payNow: row.pay_now,
     payType: d.payType,
-    balance: row.total - (PAID.includes(row.status) || row.status === 'picked_up' ? row.pay_now : 0),
+    balance: ['picked_up', 'cancelled'].includes(row.status) ? 0 : row.total - (['confirmed', 'ready'].includes(row.status) ? row.pay_now : 0),
     paymentRef: row.payment_ref ? `••••${row.payment_ref.slice(-4)}` : null,
     refund: row.refund,
     note: d.note || '',
@@ -58,6 +60,7 @@ function publicView(row, now) {
     cancelUntil: row.created_at + CANCEL_WINDOW,
     canCancel: CUSTOMER_CANCELLABLE.includes(row.status) && now < row.created_at + CANCEL_WINDOW,
     canPay: row.status === 'awaiting_payment',
+    payBy: Math.min(row.updated_at + PAY_WINDOW, row.pickup_at),
   };
 }
 
@@ -117,9 +120,6 @@ export async function orderRequest(request, env, priceCart) {
       if (!['advance', 'full'].includes(body.pay)) return json({ error: 'Please choose how much to pay now.' }, 400);
       if (!Array.isArray(body.items) || !body.items.length || body.items.length > MAX_LINES) return json({ error: 'Your bag is empty.' }, 400);
       const note = clean(body.note, 200);
-      if (await limited(db, ipKey, 8, 3600, now) || await limited(db, await keyed(`order-phone:${phone}`, pepper), 5, 3600, now)) {
-        return json({ error: 'Too many orders in a short time. Please call us to place more orders.' }, 429, { 'Retry-After': '3600' });
-      }
       const state = await readState(db);
       const business = state.business;
       if (!business.upiId && !business.qrImageId) return json({ error: 'Online payment is opening soon. Please call or WhatsApp us to order.' }, 503);
@@ -129,6 +129,10 @@ export async function orderRequest(request, env, priceCart) {
       const { lines, total } = priced;
       if (total < 1) return json({ error: 'Your bag is empty.' }, 400);
       const payNow = body.pay === 'full' ? total : Math.min(total, Math.ceil((total * business.advancePercent) / 100));
+      // Count only orders that are about to be placed, so a customer fixing their bag does not hit the limit.
+      if (await limited(db, ipKey, 8, 3600, now) || await limited(db, await keyed(`order-phone:${phone}`, pepper), 5, 3600, now)) {
+        return json({ error: 'Too many orders in a short time. Please call us to place more orders.' }, 429, { 'Retry-After': '3600' });
+      }
       const token = random(16);
       const data = { lines, note, payType: body.pay, advancePercent: business.advancePercent, history: [{ status: 'awaiting_payment', at: now }] };
       let id = '';
@@ -153,6 +157,8 @@ export async function orderRequest(request, env, priceCart) {
         const ref = typeof body.ref === 'string' ? body.ref.replace(/\s/g, '') : '';
         if (!/^\d{12}$/.test(ref)) return json({ error: 'The UPI reference number has 12 digits. You can find it in your UPI app under this payment.' }, 400);
         if (row.status !== 'awaiting_payment') return json({ error: 'This order is not waiting for payment.' }, 409);
+        const reused = await db.prepare('SELECT id FROM shop_orders WHERE payment_ref=? AND id<>? LIMIT 1').bind(ref, row.id).first();
+        if (reused) return json({ error: 'This UPI reference number is already used for another order. Please check the number in your UPI app.' }, 409);
         const updated = await move(db, row, 'payment_check', now, { paymentRef: ref, shopNote: '' });
         if (!updated) return json({ error: 'Please refresh and try again.' }, 409);
         return json({ order: publicView(updated, now) });
@@ -161,7 +167,7 @@ export async function orderRequest(request, env, priceCart) {
       // Cancel: only within 30 minutes of placing the order, and only before it is packed.
       if (!CUSTOMER_CANCELLABLE.includes(row.status)) return json({ error: 'This order can no longer be cancelled online. Please call the shop.' }, 409);
       if (now >= row.created_at + CANCEL_WINDOW) return json({ error: 'The 30-minute cancellation time is over. Please call the shop.' }, 409);
-      const refund = PAID.includes(row.status) ? 'due' : null;
+      const refund = row.status === 'confirmed' ? 'due' : row.status === 'payment_check' ? 'check' : null;
       const updated = await move(db, row, 'cancelled', now, { by: 'customer', cancelledBy: 'customer', cancelReason: 'Cancelled by you.', refund });
       if (!updated) return json({ error: 'Please refresh and try again.' }, 409);
       return json({ order: publicView(updated, now) });
@@ -203,14 +209,23 @@ export async function adminOrderRequest(request, env) {
     if (!row) return json({ error: 'Unknown order.' }, 404);
 
     if (body.action === 'refunded') {
-      if (row.refund !== 'due') return json({ error: 'No refund is due for this order.' }, 409);
+      if (row.refund !== 'due' && row.refund !== 'check') return json({ error: 'No refund is due for this order.' }, 409);
       await db.prepare("UPDATE shop_orders SET refund='done', updated_at=? WHERE id=?").bind(now, row.id).run();
+      return list();
+    }
+    if (body.action === 'no_payment') {
+      // The owner checked the bank: the money never arrived, so nothing to refund.
+      if (row.refund !== 'check') return json({ error: 'Nothing to check for this order.' }, 409);
+      const d = parseData(row);
+      d.cancelReason = `${d.cancelReason || 'Cancelled.'} No payment was received, so there is nothing to refund.`;
+      await db.prepare('UPDATE shop_orders SET refund=NULL, data=?, updated_at=? WHERE id=?').bind(JSON.stringify(d), now, row.id).run();
       return list();
     }
     if (body.action !== 'update') return json({ error: 'Unknown action.' }, 400);
     const t = TRANSITIONS[body.to];
     if (!t) return json({ error: 'Unknown step.' }, 400);
     if (!t.from.includes(row.status)) return json({ error: 'This order has already moved on. Refreshing…' }, 409);
+    if (body.to === 'not_collected' && now < row.pickup_at) return json({ error: 'You can mark it “not collected” only after the pickup time.' }, 409);
     const reason = clean(body.reason, 160);
     const extra = { by: 'shop' };
     if (body.to === 'payment_issue') {
@@ -220,7 +235,7 @@ export async function adminOrderRequest(request, env) {
     if (body.to === 'cancel') {
       extra.cancelledBy = 'shop';
       extra.cancelReason = reason || 'Cancelled by the shop.';
-      extra.refund = PAID.includes(row.status) ? 'due' : null;
+      extra.refund = ['confirmed', 'ready'].includes(row.status) ? 'due' : row.status === 'payment_check' ? 'check' : null;
     }
     if (body.to === 'not_collected') {
       extra.cancelledBy = 'shop';

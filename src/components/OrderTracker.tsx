@@ -107,7 +107,7 @@ export default function OrderTracker({ id, token, business, initial, onClose }: 
   const lastAt = (s: string) => [...order.history].reverse().find(h => h.status === s)?.at;
   const currentIndex = order.status === 'cancelled' ? -1 : reachedIndex(order.status);
   const cancelLeft = Math.max(0, order.cancelUntil - now);
-  const payLeft = Math.max(0, (lastAt('awaiting_payment') || order.createdAt) + PAY_WINDOW - now);
+  const payLeft = Math.max(0, (order.payBy ?? (lastAt('awaiting_payment') || order.createdAt) + PAY_WINDOW) - now);
   const upiLink = business.upiId
     ? `upi://pay?pa=${encodeURIComponent(business.upiId)}&pn=${encodeURIComponent(business.payeeName || 'Mahima Sweets')}&am=${order.payNow}.00&cu=INR&tn=${encodeURIComponent(`Order ${order.id}`)}`
     : '';
@@ -172,6 +172,7 @@ export default function OrderTracker({ id, token, business, initial, onClose }: 
       {order.status === 'cancelled' && order.refund && (
         <div className={`tr-refund ${order.refund}`}>
           {order.refund === 'due' && <><Clock3 size={18} /><span>Your payment of {money(order.payNow)} will be refunded to the same UPI account within 5–7 working days.</span></>}
+          {order.refund === 'check' && <><Clock3 size={18} /><span>If your payment of {money(order.payNow)} reached us, it will be refunded to the same UPI account within 5–7 working days. The shop is checking.</span></>}
           {order.refund === 'done' && <><CheckCircle2 size={18} /><span>Refund of {money(order.payNow)} has been sent to your UPI account.</span></>}
           {order.refund === 'kept' && <><AlertTriangle size={18} /><span>The order was not collected, so the advance was kept as per our <a href="/refund-policy/" target="_blank" rel="noopener noreferrer">refund policy</a>. Please call us if you think this is a mistake.</span></>}
         </div>

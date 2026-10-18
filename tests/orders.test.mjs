@@ -106,7 +106,7 @@ test('customer pays, tracks, and the shop moves the order to picked up', async (
   const paid = await (await order({ action: 'pay', id: o.id, t: token, ref: '412345678901' })).json();
   assert.equal(paid.order.status, 'payment_check');
   assert.equal(paid.order.paymentRef, '••••8901');
-  assert.equal(paid.order.balance, 442);
+  assert.equal(paid.order.balance, 590); // not counted as paid until the shop confirms
 
   assert.equal((await orders(null, '')).status, 401);
   let list = await (await orders(null, c)).json();
@@ -135,13 +135,14 @@ test('cancel within 30 minutes with refund due; not after 30 minutes; shop cance
   const { db, order, track, admin, orders } = fixture();
   const c = cookieOf(await admin({ action: 'login', password: PASSWORD }));
   await admin({ action: 'setBusiness', business: BUSINESS }, c);
-  const make = async () => (await (await order({ action: 'create', items, name: 'Ravi', phone: '9876543210', pickupAt: slot(), pay: 'advance', agree: true })).json());
+  let n0 = 0;
+  const make = async () => (await (await order({ action: 'create', items, name: 'Ravi', phone: `98765${String(43210 + n0++).padStart(5, '0')}`, pickupAt: slot(), pay: 'advance', agree: true })).json());
 
   const a = await make();
   await order({ action: 'pay', id: a.order.id, t: a.token, ref: '412345678901' });
   const cancelled = await (await order({ action: 'cancel', id: a.order.id, t: a.token })).json();
   assert.equal(cancelled.order.status, 'cancelled');
-  assert.equal(cancelled.order.refund, 'due');
+  assert.equal(cancelled.order.refund, 'check'); // reference sent but not verified: refund only if money arrived
   await orders({ action: 'refunded', id: a.order.id }, c);
   assert.equal((await (await track(a.order.id, a.token)).json()).order.refund, 'done');
 
@@ -159,18 +160,30 @@ test('cancel within 30 minutes with refund due; not after 30 minutes; shop cance
   const sv = (await (await track(s.order.id, s.token)).json()).order;
   assert.equal(sv.cancelledBy, 'shop');
   assert.equal(sv.cancelReason, 'Kaju Burfi finished today');
-  assert.equal(sv.refund, 'due');
+  assert.equal(sv.refund, 'check');
+  await orders({ action: 'no_payment', id: s.order.id }, c);
+  const sv2 = (await (await track(s.order.id, s.token)).json()).order;
+  assert.equal(sv2.refund, null);
+  assert.match(sv2.cancelReason, /nothing to refund/);
+
+  // Verified payment then cancelled within 30 minutes → refund due.
+  const v = await make();
+  await order({ action: 'pay', id: v.order.id, t: v.token, ref: '412345678905' });
+  await orders({ action: 'update', id: v.order.id, to: 'confirm' }, c);
+  assert.equal((await (await order({ action: 'cancel', id: v.order.id, t: v.token })).json()).order.refund, 'due');
 
   const n = await make();
   await order({ action: 'pay', id: n.order.id, t: n.token, ref: '412345678904' });
   await orders({ action: 'update', id: n.order.id, to: 'confirm' }, c);
+  assert.equal((await orders({ action: 'update', id: n.order.id, to: 'not_collected' }, c)).status, 409); // before pickup time
+  db.prepare('UPDATE shop_orders SET pickup_at=? WHERE id=?').run(now() - 60, n.order.id);
   await orders({ action: 'update', id: n.order.id, to: 'not_collected' }, c);
   assert.equal((await (await track(n.order.id, n.token)).json()).order.refund, 'kept');
   db.close();
 });
 
 test('unpaid orders lapse after 2 hours; order spam is limited; other sites are blocked', async () => {
-  const { db, order, track, admin } = fixture();
+  const { db, order, track, admin, orders } = fixture();
   const c = cookieOf(await admin({ action: 'login', password: PASSWORD }));
   await admin({ action: 'setBusiness', business: BUSINESS }, c);
   const base = { action: 'create', items, name: 'Ravi', phone: '9876543210', pickupAt: slot(), pay: 'advance', agree: true };
@@ -179,6 +192,28 @@ test('unpaid orders lapse after 2 hours; order spam is limited; other sites are 
   const t = (await (await track(a.order.id, a.token)).json()).order;
   assert.equal(t.status, 'cancelled');
   assert.match(t.cancelReason, /not received/);
+  assert.equal(t.refund, null);
+
+  // Lapses at pickup time if sooner; a reference sent earlier (then "not found") flags it for checking.
+  const e = await (await order({ ...base, phone: '9876511111' }, '192.0.2.60')).json();
+  await order({ action: 'pay', id: e.order.id, t: e.token, ref: '412345670000' });
+  const cE = cookieOf(await admin({ action: 'login', password: PASSWORD }));
+  await orders({ action: 'update', id: e.order.id, to: 'payment_issue' }, cE);
+  db.prepare('UPDATE shop_orders SET pickup_at=? WHERE id=?').run(now() - 60, e.order.id);
+  const eT = (await (await track(e.order.id, e.token)).json()).order;
+  assert.equal(eT.status, 'cancelled');
+  assert.equal(eT.refund, 'check');
+  assert.match(eT.cancelReason, /before the pickup time/);
+
+  // The same UPI reference cannot be used on two orders.
+  const f = await (await order({ ...base, phone: '9876522222' }, '192.0.2.61')).json();
+  const g = await (await order({ ...base, phone: '9876533333' }, '192.0.2.62')).json();
+  assert.equal((await order({ action: 'pay', id: f.order.id, t: f.token, ref: '499999999999' })).status, 200);
+  assert.equal((await order({ action: 'pay', id: g.order.id, t: g.token, ref: '499999999999' })).status, 409);
+
+  // Failed attempts (bad pickup time) do not use up the order limit.
+  for (let i = 0; i < 6; i++) assert.equal((await order({ ...base, phone: '9876544444', pickupAt: slot() + 60 }, '192.0.2.63')).status, 400);
+  assert.equal((await order({ ...base, phone: '9876544444' }, '192.0.2.63')).status, 200);
 
   for (let i = 0; i < 4; i++) assert.equal((await order(base)).status, 200);
   assert.equal((await order(base)).status, 429); // 5 per phone per hour (1 above + 4)
