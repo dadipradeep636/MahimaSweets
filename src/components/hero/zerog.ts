@@ -131,22 +131,27 @@ export const buildZeroG: SceneBuilder = (scene, renderer) => {
       uniform vec3 uHover, uBurst;
       varying vec4 vColor; varying vec3 vNormal; varying float vM;
       void main() {
-        float e = smoothstep(0., 1., clamp((uP - aRand.x * .38) / .62, 0., 1.));
+        // a graceful wave: pearls lift off from the top first, with a little individual variation
+        float wave = clamp((1.6 - aFrom.y) / 3.6, 0., 1.) * .42 + aRand.x * .12;
+        float k = clamp((uP - wave) / .46, 0., 1.);
+        float e = k < .5 ? 4. * k * k * k : 1. - pow(-2. * k + 2., 3.) / 2.;   // ease in-out cubic
         float m = sin(3.14159265 * e);
         vec3 dir = normalize(aRand.yzw - .5 + 1e-4);
-        vec3 p = mix(aFrom, aTo, e) + dir * m * (.55 + aRand.x * 1.1);
-        float ang = m * (1.4 + aRand.y * 2.2);
+        vec3 p = mix(aFrom, aTo, e);
+        float ang = m * (2.1 + aRand.y * .5);                // one smooth vortex, all turning the same way
         float ca = cos(ang), sa = sin(ang);
         p.xz = mat2(ca, -sa, sa, ca) * p.xz;
-        p.y += m * (aRand.z * 1.0 - .15);                      // weightless: drifts upwards while apart
+        p.xz *= 1. + m * (.28 + aRand.x * .22);              // gently opens outward
+        p.y += m * (.25 + aRand.z * .55);                    // weightless lift
+        p += dir * m * .12;
         p += .016 * vec3(sin(uTime * 1.3 + aRand.y * 40.), sin(uTime * 1.1 + aRand.z * 40.), sin(uTime * .9 + aRand.w * 40.));
         vec4 wp = modelMatrix * vec4(p, 1.);
         vec3 d = wp.xyz - uHover; float l = length(d);
         wp.xyz += normalize(d + dir * .2) * smoothstep(1.25, 0., l) * .75 * uHoverOn;   // part around the cursor
         float age = uTime - uBurstT;
-        float s = age > 0. ? exp(-age * 1.3) * (1. - exp(-age * 16.)) : 0.;
+        float s = age > 0. ? exp(-age * 2.2) * (1. - exp(-age * 14.)) : 0.;
         vec3 bd = wp.xyz - uBurst;
-        wp.xyz += normalize(bd + dir * .5) * s * (1.6 + aRand.x * 1.8) * smoothstep(4.5, 0., length(bd));  // tap shockwave
+        wp.xyz += normalize(bd + dir * .35) * s * (.9 + aRand.x * .9) * smoothstep(4., 0., length(bd));  // tap shockwave
         vec4 mv = viewMatrix * wp;
         gl_Position = projectionMatrix * mv;
         // pearls shrink away (in a ripple) as the real photo takes over
@@ -189,8 +194,8 @@ export const buildZeroG: SceneBuilder = (scene, renderer) => {
     fragmentShader: `uniform sampler2D map; uniform float uOpacity, uSweep; varying vec2 vUv;
       void main(){
         vec4 c = texture2D(map, vUv);
-        float band = smoothstep(.16, 0., abs((vUv.x + vUv.y * .45) - uSweep));
-        c.rgb += band * .28 * c.a;
+        float band = smoothstep(.1, 0., abs((vUv.x + vUv.y * .45) - uSweep));
+        c.rgb += band * .1 * c.a * vec3(1., .85, .6);
         // reveal from the middle outwards
         float d = length(vUv - .5) * 1.5;
         float reveal = smoothstep(d - .18, d + .02, uOpacity * 1.25);
@@ -239,21 +244,21 @@ export const buildZeroG: SceneBuilder = (scene, renderer) => {
 
   /* glossy syrup droplets floating around */
   const dropMat = new THREE.MeshPhysicalMaterial({ color: 0xe0801a, roughness: 0.05, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 1.6, emissive: 0x4a1800, emissiveIntensity: 0.4 });
-  const drops = Array.from({ length: 9 }, (_, i) => {
+  const drops = Array.from({ length: 6 }, (_, i) => {
     const m = new THREE.Mesh(new THREE.SphereGeometry(0.05 + rr() * 0.09, 24, 16), dropMat);
     root.add(m);
-    return { m, a: (i / 9) * Math.PI * 2, r: 2.35 + rr() * 0.8, y: (rr() - 0.5) * 2.4, sp: 0.15 + rr() * 0.2, ph: rr() * 6 };
+    return { m, a: (i / 6) * Math.PI * 2, r: 2.6 + rr() * 0.5, y: (rr() - 0.5) * 2.2, sp: 0.1 + rr() * 0.08, ph: rr() * 6 };
   });
 
   /* shockwave ring for taps */
-  const wave = new THREE.Mesh(new THREE.RingGeometry(0.9, 1, 96), ringMat(0));
+  const wave = new THREE.Mesh(new THREE.RingGeometry(0.95, 1, 128), ringMat(0));
   root.add(wave);
 
   /* ---------- timeline ---------- */
   // per sweet: pearls gather (MORPH) → real photo fades in (SOLID_IN) → hold → photo dissolves back into pearls (SOLID_OUT) → next
-  const MORPH = 2.6, SOLID_IN = 0.9, HOLD = 4.2, SOLID_OUT = 0.8, P = MORPH + SOLID_IN + HOLD + SOLID_OUT;
+  const MORPH = 3.2, SOLID_IN = 1.0, HOLD = 4.0, SOLID_OUT = 0.9, P = MORPH + SOLID_IN + HOLD + SOLID_OUT;
   const A = geo.attributes as Record<string, THREE.BufferAttribute>;
-  let seg = -1;
+  let seg = -1, curW = 1, curH = 1;
   const load = (s: number) => {
     const from = s === 0 ? start : sweets[(s - 1) % sweets.length];
     const to = sweets[s % sweets.length];
@@ -264,7 +269,7 @@ export const buildZeroG: SceneBuilder = (scene, renderer) => {
     for (const k of ['aFrom', 'aTo', 'nFrom', 'nTo', 'cFrom', 'cTo', 'position']) A[k].needsUpdate = true;
     uniforms.uSizeFrom.value = from.size; uniforms.uSizeTo.value = to.size;
     photoMat.uniforms.map.value = to.tex ?? null;
-    photo.scale.set(to.w, to.h, 1);
+    curW = to.w; curH = to.h;
     renderer.domElement.dispatchEvent(new CustomEvent('hero-label', { detail: { name: to.name, delay: MORPH * 0.75 } }));
   };
 
@@ -275,7 +280,7 @@ export const buildZeroG: SceneBuilder = (scene, renderer) => {
     ray.setFromCamera(new THREE.Vector2(nx, ny), camera);
     return ray.ray.intersectPlane(plane, hit) ? hit.clone() : null;
   };
-  let now = 0, waveT = -99, t0 = -1, tapT = -99;
+  let now = 0, waveT = -99, t0 = 0, began = false, tapT = -99, skip = 0;
   const size = new THREE.Vector2();
 
   return {
@@ -287,7 +292,9 @@ export const buildZeroG: SceneBuilder = (scene, renderer) => {
       if (!p) return;
       uniforms.uBurst.value.copy(p);
       uniforms.uBurstT.value = now;
-      tapT = now; // a tap breaks the photo back into pearls for a moment
+      // a tap sends a ripple through the pearls and moves on to the next sweet
+      if (now - tapT > 1.4) skip = 1;
+      tapT = now;
       wave.position.copy(p);
       wave.lookAt(camera.position);
       waveT = now;
@@ -298,33 +305,36 @@ export const buildZeroG: SceneBuilder = (scene, renderer) => {
       uniforms.uPx.value = size.y / 2 / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
       const need = 3.4 / (Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect);
       const dist = Math.max(10.2, need);
-      camera.position.set(px * 0.8, 0.9 - py * 0.5, dist);
+      camera.position.set(px * 0.45, 0.9 - py * 0.3, dist);
       camera.lookAt(0, -0.25, 0);
       uniforms.uTime.value = t;
 
       if (sweets.length) {
-        if (t0 < 0) t0 = t;
-        const lt = t - t0;
-        const s = Math.floor(lt / P), local = lt - s * P;
+        if (!began) { began = true; t0 = t; }
+        let lt = t - t0, local = lt % P;
+        if (skip) { // jump to the moment the current sweet starts dissolving
+          skip = 0;
+          if (local >= MORPH && local < P - SOLID_OUT) { t0 -= P - SOLID_OUT - local; lt = t - t0; local = lt % P; }
+        }
+        const s = Math.floor(lt / P);
         if (s !== seg) { seg = s; load(s); }
         uniforms.uP.value = ease.clamp(local / MORPH);
         const sIn = ease.inOutSine(ease.clamp((local - MORPH) / SOLID_IN));
         const sOut = ease.inOutSine(ease.clamp((local - (P - SOLID_OUT)) / SOLID_OUT));
-        // after a tap the photo melts back into pearls, then re-forms
-        const tapAge = t - tapT;
-        const tapK = tapAge >= 0 && tapAge < 2.2 ? Math.min(1, tapAge / 0.12, (2.2 - tapAge) / 0.9) : 0;
-        const solid = Math.max(0, sIn * (1 - sOut) - tapK);
+        const solid = sIn * (1 - sOut);
         uniforms.uSolid.value = solid;
         photoMat.uniforms.uOpacity.value = solid;
         photoMat.uniforms.uSweep.value = -0.4 + ease.clamp((local - MORPH - 0.3) / 1.4) * 2.2;
         photo.visible = solid > 0.001;
         // the real photo is flat, so it turns only gently while visible
-        holder.rotation.y = Math.sin(t * 0.32) * 0.42 * (1 - 0.8 * solid) + px * 0.35 * (1 - 0.6 * solid);
-        holder.rotation.x = py * 0.12;
+        holder.rotation.y = Math.sin(t * 0.25) * 0.22 * (1 - 0.75 * solid) + px * 0.22 * (1 - 0.6 * solid);
+        holder.rotation.x = py * 0.08;
+        const sc = 0.965 + 0.035 * ease.outCubic(solid); // settles into place
+        photo.scale.set(curW * sc, curH * sc, 1);
       } else {
-        holder.rotation.y = Math.sin(t * 0.32) * 0.42;
+        holder.rotation.y = Math.sin(t * 0.25) * 0.22;
       }
-      holder.position.y = Math.sin(t * 0.8) * 0.12 + 0.15;
+      holder.position.y = Math.sin(t * 0.7) * 0.08 + 0.15;
 
       if (hover) { const p = worldAt(nx, ny); if (p) uniforms.uHover.value.lerp(p, Math.min(1, dt * 12)); }
       uniforms.uHoverOn.value += ((hover ? 1 : 0) - uniforms.uHoverOn.value) * Math.min(1, dt * 4);
@@ -348,14 +358,14 @@ export const buildZeroG: SceneBuilder = (scene, renderer) => {
 
       drops.forEach(d => {
         const a = d.a + t * d.sp;
-        d.m.position.set(Math.cos(a) * d.r, d.y + Math.sin(t * 0.7 + d.ph) * 0.3, Math.sin(a) * d.r * 0.6);
-        const w = Math.sin(t * 3 + d.ph) * 0.08;
+        d.m.position.set(Math.cos(a) * d.r, d.y + Math.sin(t * 0.5 + d.ph) * 0.25, Math.sin(a) * d.r * 0.4 - 0.8);
+        const w = Math.sin(t * 2 + d.ph) * 0.05;
         d.m.scale.set(1 + w, 1 - w, 1 + w);
       });
 
       const wa = t - waveT;
-      wave.visible = wa < 1;
-      if (wave.visible) { wave.scale.setScalar(0.2 + ease.outCubic(wa) * 2.6); (wave.material as THREE.MeshBasicMaterial).opacity = (1 - wa) * 0.8; }
+      wave.visible = wa < 0.9;
+      if (wave.visible) { const k = wa / 0.9; wave.scale.setScalar(0.25 + ease.outCubic(k) * 1.7); (wave.material as THREE.MeshBasicMaterial).opacity = Math.pow(1 - k, 2) * 0.55; }
     },
   };
 };
